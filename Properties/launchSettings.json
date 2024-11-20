@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "InLoVe (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "InLoVe (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
