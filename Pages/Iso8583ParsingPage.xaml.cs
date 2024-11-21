@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using InLoVe.Objects;
 using InLoVe.Services;
@@ -63,49 +62,54 @@ public partial class Iso8583ParsingPage
         if (_currentMessageBuffer.Count == 0) return;
 
         var fullMessage = string.Join("\n", _currentMessageBuffer);
-        var (mti, parsedFields) = Iso8583Parser.ParseIsoMessage(fullMessage);
+        var isoMsg = Iso8583Parser.ParseIsoMessage(fullMessage);
 
-        AddMessageToTreeView(mti, parsedFields);
+        AddMessageToTreeView(isoMsg);
         _currentMessageBuffer.Clear();
         _isParsingMessage = false;
     }
 
-    private void AddMessageToTreeView(string mti, Dictionary<string, string> fields)
+    private void AddMessageToTreeView(ISO8583 isoMsg)
     {
         // Create a new TreeView for this ISO8583 message
         var newTreeView = new TreeView
         {
             Margin = new Microsoft.UI.Xaml.Thickness(5),
+            AllowDrop = false,
+            CanDragItems = false,
+            CanReorderItems = false,
+            CanDrag = false,
         };
 
         // Create the root node using the MTI
         var rootNode = new TreeViewNode
         {
-            Content = $"MTI: {mti}"
+            Content = $"MTI: {isoMsg.MessageType}"
         };
 
         // Add fields to the root node
-        foreach (var field in fields)
+        foreach (var data in isoMsg.DataElements)
         {
-            if (field.Key.Contains('('))
-            {
-                var mainField = field.Key.Split('(')[0].Trim(); // e.g., 60
-                var subfieldNode = new TreeViewNode
-                {
-                    Content = $"{mainField} ({field.Key.Split('(')[1]}"
-                };
+            var subfieldNode = new TreeViewNode();
+            var length = data.Value.Length.ToString()?.PadLeft(4, '0');
+            var values = data.Value.Value;
 
-                subfieldNode.Children.Add(new TreeViewNode { Content = field.Value });
+            if (data.Value.Length == null && data.Value.Value.Count == 1)
+            {
+                subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : {values[0]}";
                 rootNode.Children.Add(subfieldNode);
             }
-            else
+
+            if (data.Value.Value.Count <= 1) continue;
+
+            subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : ({length})";
+
+            foreach (var value in values)
             {
-                var fieldNode = new TreeViewNode
-                {
-                    Content = $"{field.Key}={field.Value}"
-                };
-                rootNode.Children.Add(fieldNode);
+                subfieldNode.Children.Add(new TreeViewNode { Content = value });
             }
+
+            rootNode.Children.Add(subfieldNode);
         }
 
         // Add the root node to the TreeView
