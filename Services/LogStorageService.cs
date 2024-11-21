@@ -47,7 +47,7 @@ public class LogStorageService
         var currentMemoryUsage = GetReadableSize(Process.GetCurrentProcess().WorkingSet64);
         var availableMemory = GetReadableSize(GC.GetGCMemoryInfo().HighMemoryLoadThresholdBytes);
 
-        var memoryUsagePercentage = (Process.GetCurrentProcess().WorkingSet64 / (double)1073741824) * 100;
+        var memoryUsagePercentage = (Process.GetCurrentProcess().WorkingSet64 / (double)GC.GetGCMemoryInfo().HighMemoryLoadThresholdBytes) * 100;
 
         return new Tuple<double, string>(memoryUsagePercentage, $"Approx. Memory Usage: {currentMemoryUsage}/{availableMemory} ({memoryUsagePercentage:F2}%)");
     }

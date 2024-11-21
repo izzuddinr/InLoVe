@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     {
         _pageFrames["HomePage"] = CreateFrame(typeof(Pages.HomePage));
         _pageFrames["LogMonitoringPage"] = CreateFrame(typeof(Pages.LogMonitoringPage));
+        _pageFrames["Iso8583ParsingPage"] = CreateFrame(typeof(Pages.Iso8583ParsingPage));
 
         ContentPresenter.Content = _pageFrames["HomePage"];
     }

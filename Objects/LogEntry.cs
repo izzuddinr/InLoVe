@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using InLoVe.Utils;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
@@ -42,11 +43,11 @@ public class LogEntry
 
     private bool ParseLogLine(string logLine)
     {
-        var parts = logLine.Split(new[] { ' ' }, 7, StringSplitOptions.RemoveEmptyEntries);
+        var parts = logLine.Split([' '], 7, StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length < 7)
         {
-            Console.WriteLine("Log line format is invalid.");
+            Console.WriteLine($"Log line format is invalid.[{logLine}]");
             return false;
         }
 
@@ -61,8 +62,13 @@ public class LogEntry
     }
 
     public string FormattedEntry =>
-        $"{Date} {Time} {GetTrimmedOrPadded(FormatPackageName(), 40)} {Level} {GetTrimmedOrPadded(Tag, 48)} {Message}";
-
+        $"{Date} " +
+        $"{Time} " +
+        $"{GetTrimmedOrPadded(FormatPackageName(), 40)} " +
+        $"{Level} " +
+        $"{GetTrimmedOrPadded(Tag, 48)} " +
+        $"{(Message != null && Message.StartsWith(": ") ? Message : ": " + Message)}";
+    
     private string FormatPackageName()
     {
         var truncatedPackageName = PackageName.Length >= 32 ? PackageName[^32..] : PackageName;

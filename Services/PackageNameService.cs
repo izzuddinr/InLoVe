@@ -164,7 +164,6 @@ public class PackageNameService
 
         public string GetPackageName(string processId)
         {
-            Console.WriteLine($"Fetching package name for process ID {processId}.");
             return _packageCache.TryGetValue(processId, out var packageName) ? packageName : string.Empty;
         }
 

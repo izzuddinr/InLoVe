@@ -13,6 +13,7 @@
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Home" Icon="Home" Tag="HomePage"/>
             <NavigationViewItem Content="Logcat" Icon="ShowResults" Tag="LogMonitoringPage"/>
+            <NavigationViewItem Content="Txn Msg" Icon="Mail" Tag="Iso8583ParsingPage"/>
         </NavigationView.MenuItems>
 
         <ContentPresenter x:Name="ContentPresenter"/>
