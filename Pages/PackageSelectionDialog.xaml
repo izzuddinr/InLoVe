@@ -1,0 +1,23 @@
+<Page
+    x:Class="InLoVe.Pages.PackageSelectionDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel>
+        <TextBlock Text="Select packages to display logs for:" Margin="0,0,0,10"/>
+
+        <!-- Search TextBox for live search functionality -->
+        <TextBox x:Name="SearchTextBox"
+                 PlaceholderText="Search packages..."
+                 Margin="0,0,0,10"
+                 TextChanged="SearchTextBox_TextChanged"/>
+
+        <!-- ScrollViewer for the list of packages -->
+        <ScrollViewer x:Name="LogScrollViewer"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Grid x:Name="PackageCheckboxGrid" Margin="0,0,0,10">
+            </Grid>
+        </ScrollViewer>
+    </StackPanel>
+</Page>
