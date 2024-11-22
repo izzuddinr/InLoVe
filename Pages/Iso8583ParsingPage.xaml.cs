@@ -20,6 +20,7 @@ public partial class Iso8583ParsingPage
     public Iso8583ParsingPage()
     {
         InitializeComponent();
+        IsoMsgScrollViewer.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
 
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 

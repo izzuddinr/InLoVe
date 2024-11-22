@@ -13,7 +13,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid x:Name="MainGrid" Margin="10,10,10,5">
+    <Grid x:Name="MainGrid" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -21,7 +21,7 @@
 
         <!-- Title -->
         <TextBlock
-            Text="ISO8583 Parsing"
+            Text="ISO8583 Messages"
             FontSize="24"
             Margin="10"
             Grid.Row="0" />

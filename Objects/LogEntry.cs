@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 using InLoVe.Utils;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
@@ -72,6 +73,19 @@ public class LogEntry
     {
         var truncatedPackageName = PackageName.Length >= 32 ? PackageName[^32..] : PackageName;
         return $"{truncatedPackageName} ({ProcessId})";
+    }
+
+    public int GetSize()
+    {
+        return sizeof(int) * 2
+               + Encoding.UTF8.GetByteCount(Date)
+               + Encoding.UTF8.GetByteCount(Time)
+               + Encoding.UTF8.GetByteCount(ProcessId)
+               + Encoding.UTF8.GetByteCount(ThreadId)
+               + Encoding.UTF8.GetByteCount(Level)
+               + Encoding.UTF8.GetByteCount(Tag)
+               + Encoding.UTF8.GetByteCount(PackageName)
+               + Encoding.UTF8.GetByteCount(Message);
     }
 
     private static string GetTrimmedOrPadded(string value, int length)

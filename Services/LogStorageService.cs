@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using InLoVe.Objects;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,21 @@ public class LogStorageService
     {
         _logEntries.Clear();
         return Task.CompletedTask;
+    }
+
+    public string GetLogBufferSize()
+    {
+        var logBufferCount = $"Log Entries: {_logEntries.Count}";
+        var logBufferSize = "0 Bytes";
+        try
+        {
+            logBufferSize =$"Approx. Size: {GetReadableSize(_logEntries.Values.Sum(entry => entry.GetSize()))}";
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        return $"{logBufferCount} ({logBufferSize})";
     }
 
     public Tuple<double, string> GetCurrentMemoryUsage()

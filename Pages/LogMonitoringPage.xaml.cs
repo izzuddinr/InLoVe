@@ -52,7 +52,6 @@ public sealed partial class LogMonitoringPage
 
         LoadDevices();
         LoadPackages();
-        StartMemoryUsageUpdate();
 
         StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
         StartStopToggleButton.IsEnabled = DeviceComboBox.SelectedIndex != -1;
@@ -167,7 +166,7 @@ public sealed partial class LogMonitoringPage
 
     private void StartStopToggleButton_Checked(object sender, RoutedEventArgs e)
     {
-        StartStopIcon.Symbol = Symbol.Stop;
+        StartStopIcon.Glyph = "\uE71A";
         StartStopText.Text = "Stop";
         StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StopColor.ToString());
         DeviceComboBox.IsEnabled = false;
@@ -176,7 +175,7 @@ public sealed partial class LogMonitoringPage
 
     private void StartStopToggleButton_Unchecked(object sender, RoutedEventArgs e)
     {
-        StartStopIcon.Symbol = Symbol.Play;
+        StartStopIcon.Glyph = "\uE768";
         StartStopText.Text = "Start";
         StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
         DeviceComboBox.IsEnabled = true;
@@ -291,19 +290,5 @@ public sealed partial class LogMonitoringPage
     private void ClearSelectedPackaged(PackageSelectionDialog dialogContent)
     {
         dialogContent.ClearAllCheckboxes(SelectedPackages);
-    }
-
-    private void StartMemoryUsageUpdate()
-    {
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        timer.Tick += (sender, e) => UpdateMemoryUsage();
-        timer.Start();
-    }
-
-    private void UpdateMemoryUsage()
-    {
-        var memoryData = _logStorageService.GetCurrentMemoryUsage();
-        MemoryBar.Value = memoryData.Item1;
-        MemoryUsageTextBlock.Text = memoryData.Item2;
     }
 }

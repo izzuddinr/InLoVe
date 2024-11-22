@@ -11,11 +11,61 @@
                     IsBackButtonVisible="Collapsed"
                     IsPaneOpen="False">
         <NavigationView.MenuItems>
-            <NavigationViewItem Content="Home" Icon="Home" Tag="HomePage"/>
-            <NavigationViewItem Content="Logcat" Icon="ShowResults" Tag="LogMonitoringPage"/>
-            <NavigationViewItem Content="Txn Msg" Icon="Mail" Tag="Iso8583ParsingPage"/>
+            <NavigationViewItem Content="Home" Tag="HomePage">
+                <NavigationViewItem.Icon>
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE80F;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem Content="Logcat" Tag="LogMonitoringPage">
+                <NavigationViewItem.Icon>
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE8FD;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem Content="ISO8583 Message" Tag="Iso8583ParsingPage">
+                <NavigationViewItem.Icon>
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE715;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem Content="Host Record" Tag="HostRecordPage">
+                <NavigationViewItem.Icon>
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xEC27;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
         </NavigationView.MenuItems>
 
-        <ContentPresenter x:Name="ContentPresenter"/>
+
+        <Grid x:Name="HomePageGrid" Margin="10,0,10,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentPresenter Grid.Row="0" x:Name="ContentPresenter"/>
+
+            <Grid Grid.Row="1" Margin="10, 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="LogBufferSize"
+                           FontFamily="Consolas"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Text=""
+                           Grid.Column="0"/>
+                <StackPanel Orientation="Vertical"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Grid.Column="2">
+                    <TextBlock x:Name="MemoryUsageTextBlock"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Text="Memory Usage: (0 / 0)" />
+                    <ProgressBar x:Name="MemoryBar"
+                                 Value="0"
+                                 HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </Grid>
+        </Grid>
     </NavigationView>
 </Window>

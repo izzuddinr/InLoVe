@@ -19,6 +19,9 @@ public static class Iso8583Parser
         43, // ans 40	Card acceptor name/location
         44, // an ..25	Additional response data
         54, // an ...120 Additional amounts
+        60, // an ...120 Additional amounts
+        61, // an ...120 Additional amounts
+        62, // an ...120 Additional amounts
         91, // an 1	File update code
         92, // an 2	File security code
         93, // an 5	Response indicator

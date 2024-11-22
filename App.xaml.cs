@@ -33,6 +33,9 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         MainAppWindow = new MainWindow();
+        MainAppWindow.ExtendsContentIntoTitleBar = true;
+        MainAppWindow.Title = "InLoVe";
+
         MainAppWindow.Activate();
     }
 }

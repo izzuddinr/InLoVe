@@ -1,10 +1,11 @@
 <Page
-    x:Class="InLoVe.Pages.HomePage"
+    x:Class="InLoVe.Pages.HostRecordPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:obj="using:InLoVe.Objects">
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:local="using:InLoVe.Pages">
 
-    <Grid x:Name="HomePageGrid" Margin="10">
+    <Grid x:Name="MainGrid" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -12,16 +13,18 @@
 
         <!-- Title -->
         <TextBlock
-            Text="InLoVe (Ingenico Logcat Viewer)"
+            Text="Host Records"
             FontSize="24"
             Margin="10"
             Grid.Row="0" />
 
+        <!-- ScrollViewer with TreeView -->
         <ScrollViewer
-            x:Name="HomePageScrollViewer"
+            x:Name="HostRecordScrollViewer"
             Grid.Row="1"
             VerticalScrollBarVisibility="Auto"
             HorizontalScrollBarVisibility="Auto">
         </ScrollViewer>
     </Grid>
+
 </Page>
