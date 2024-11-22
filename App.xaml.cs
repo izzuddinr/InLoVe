@@ -21,6 +21,7 @@ public partial class App : Application
         var serviceCollection = new ServiceCollection();
 
         // Register services
+        serviceCollection.AddSingleton<ConfigService>();
         serviceCollection.AddSingleton<DeviceService>();
         serviceCollection.AddSingleton<LogcatService>();
         serviceCollection.AddSingleton<LogStorageService>();

@@ -47,7 +47,6 @@ public class LogEntry
 
         if (parts.Length < 7)
         {
-            Console.WriteLine($"Log line format is invalid.[{logLine}]");
             return false;
         }
 

@@ -16,7 +16,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Reference to Segoe Fluent Icons -->
-            <FontFamily x:Key="FluentIconsFont">ms-appx:///Assets/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
+            <FontFamily x:Key="FluentIconsFont">ms-appx:///Assets/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
 
         </ResourceDictionary>
     </Application.Resources>

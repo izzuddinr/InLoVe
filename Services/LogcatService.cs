@@ -21,8 +21,8 @@ public class LogcatService
 
     public async Task StartLogcat(string device)
     {
-        //Console.WriteLine("Clearing logcat buffer before starting.");
-        //await ClearLogcatBuffer(device); // Clear logcat buffer
+        Console.WriteLine("Setting ADB Logcat buffer size to 32Mb.");
+        await SetAdbLogcatBuffer(device);
 
         Console.WriteLine("Starting logcat process.");
         _logcatProcess = new Process
@@ -58,10 +58,6 @@ public class LogcatService
 
                         if (_logStorageService != null) await _logStorageService.SaveLogEntryAsync(logEntry);
                     }
-                    else
-                    {
-                        Console.WriteLine("Invalid log entry skipped.");
-                    }
                 }
             }
             catch (Exception ex)
@@ -85,6 +81,25 @@ public class LogcatService
         {
             Console.WriteLine("Logcat process was not running.");
         }
+    }
+
+    private async Task SetAdbLogcatBuffer(string device)
+    {
+        var clearProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "adb",
+                Arguments = $"-s {device} logcat -G 32M",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        clearProcess.Start();
+        await clearProcess.WaitForExitAsync();
+        Console.WriteLine("Logcat buffer cleared.");
     }
 
     private async Task ClearLogcatBuffer(string device)

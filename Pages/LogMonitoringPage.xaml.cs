@@ -6,11 +6,11 @@ using System.Linq;
 using InLoVe.Objects;
 using InLoVe.Services;
 using InLoVe.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace InLoVe.Pages;
 

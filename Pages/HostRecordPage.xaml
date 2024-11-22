@@ -5,26 +5,42 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:local="using:InLoVe.Pages">
 
+    <Page.Resources>
+        <!-- Style for TreeViewItem -->
+        <Style TargetType="muxc:TreeViewItem">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </Page.Resources>
+
     <Grid x:Name="MainGrid" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Title -->
-        <TextBlock
-            Text="Host Records"
-            FontSize="24"
-            Margin="10"
-            Grid.Row="0" />
+        <TextBlock FontSize="24"
+                   Margin="10"
+                   Text="Host Records"
+                   Grid.Row="0" />
 
         <!-- ScrollViewer with TreeView -->
-        <ScrollViewer
-            x:Name="HostRecordScrollViewer"
-            Grid.Row="1"
-            VerticalScrollBarVisibility="Auto"
-            HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="HostRecordScrollViewer"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Grid.Row="1">
+            <TreeView x:Name="HostRecordTreeView" CanDrag="False" CanDragItems="False" CanReorderItems="False" AllowDrop="False"/>
         </ScrollViewer>
+
+        <Button x:Name="OpenHostRecordFileButton"
+                Margin="0, 10"
+                HorizontalAlignment="Stretch"
+                Click="OpenHostRecordFileButton_OnClick"
+                Grid.Row="2" >
+            Open Host Record File (*.txt)
+        </Button>
     </Grid>
 
 </Page>

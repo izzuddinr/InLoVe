@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using InLoVe.Objects;
 using InLoVe.Services;
@@ -33,18 +34,24 @@ public partial class Iso8583ParsingPage
         if (eventData is not LogEntry logEntry || string.IsNullOrWhiteSpace(logEntry.Message))
             return;
 
-        _dispatcherQueue.TryEnqueue(() => { ProcessLogEntry(logEntry.Message); });
+        _dispatcherQueue.TryEnqueue(() => { ProcessLogEntry(logEntry); });
     }
 
-    private void ProcessLogEntry(string message)
+    private void ProcessLogEntry(LogEntry logEntry)
     {
-        if (!message.Contains('|'))
+        var message = logEntry.Message;
+        var isValidTag = !string.IsNullOrEmpty(logEntry.Tag) && logEntry.Tag.Contains("Operation.kt");
+        var isIsoMessageLog = !string.IsNullOrEmpty(message) && (message.Contains("packRequest") || message.Contains("unpackResponse")) && message.Contains('|');
+
+        if (_isParsingMessage && isValidTag && !message.Contains('|'))
         {
+            Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
             FinalizeCurrentMessage();
         }
 
-        if ((message.Contains("packRequest") || message.Contains("unpackResponse")) && message.Contains('|'))
+        if (isValidTag && isIsoMessageLog)
         {
+            Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
             if (_isParsingMessage)
             {
                 FinalizeCurrentMessage();
@@ -53,16 +60,23 @@ public partial class Iso8583ParsingPage
             _isParsingMessage = true;
         }
 
-        if (!_isParsingMessage) return;
-
-        _currentMessageBuffer.Add(message);
+        switch (_isParsingMessage)
+        {
+            case false:
+                return;
+            case true when isValidTag:
+                _currentMessageBuffer.Add(message);
+                break;
+        }
     }
 
     private void FinalizeCurrentMessage()
     {
         if (_currentMessageBuffer.Count == 0) return;
 
-        var fullMessage = string.Join("\n", _currentMessageBuffer);
+        var fullMessage = string.Join("\r\n", _currentMessageBuffer);
+
+        Console.WriteLine($"fullMessage: {fullMessage}");
         var isoMsg = Iso8583Parser.ParseIsoMessage(fullMessage);
 
         AddMessageToTreeView(isoMsg);
