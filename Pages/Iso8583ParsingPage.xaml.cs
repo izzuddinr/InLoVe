@@ -145,9 +145,14 @@ public partial class Iso8583ParsingPage
             {
                 subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : {values[0]}";
                 rootNode.Children.Add(subfieldNode);
+                continue;
             }
 
-            if (data.Value.Value.Count <= 1) continue;
+            if (data.Key == 55)
+            {
+                rootNode.Children.Add(BuildEmvDataTree(data.Key, data.Value));
+                continue;
+            };
 
             subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : ({length})";
 
@@ -173,5 +178,38 @@ public partial class Iso8583ParsingPage
             newStackPanel.Children.Add(newTreeView);
             IsoMsgScrollViewer.Content = newStackPanel;
         }
+    }
+
+    private TreeViewNode BuildEmvDataTree(int key, ISO8583DataElement data)
+    {
+        var subfieldNode = new TreeViewNode();
+        subfieldNode.Content = $"{key.ToString().PadLeft(3, '0')} : ({data.Length})";
+
+        var emvData = string.Join(string.Empty, data.Value);
+        subfieldNode.Children.Add(new TreeViewNode { Content = emvData});
+
+        var index = 0;
+        while (index < emvData.Length)
+        {
+            var tag = emvData.Substring(index, 2);
+            index += 2;
+
+            if ((Convert.ToByte(tag, 16) & 0x1F) == 0x1F)
+            {
+                tag += emvData.Substring(index, 2);
+                index += 2;
+            }
+
+            var length = Convert.ToInt32(emvData.Substring(index, 2), 16);
+            index += 2;
+
+            var value = emvData.Substring(index, length * 2);
+            index += length * 2;
+
+            var childNode = new TreeViewNode();
+            childNode.Content = $"{tag,-8}: ({length}) {value}";
+            subfieldNode.Children.Add(childNode);
+        }
+        return subfieldNode;
     }
 }
