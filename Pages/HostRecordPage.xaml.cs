@@ -26,17 +26,21 @@ public partial class HostRecordPage
 
     private bool _isParsingMessage;
 
+    private string[] record = { "A Records", "X Records", "C Records" };
+
     public HostRecordPage()
     {
         InitializeComponent();
         HostRecordScrollViewer.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
         OpenHostRecordFileButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
-
+        FindRecords.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _configService = App.Services.GetService<ConfigService>();
         _pubSubService = App.Services.GetService<PubSubService>();
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+
+        Records.ItemsSource = record;
     }
 
     private void OnLogEntryReceived(object eventData)

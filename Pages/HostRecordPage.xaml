@@ -18,7 +18,14 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        
+        <!--<Button x:Name="Find"
+            Margin="600, 10"                    
+            Grid.Row="0" >
+            Find Records
+        </Button>-->
 
         <!-- Title -->
         <TextBlock FontSize="24"
@@ -34,11 +41,45 @@
             <TreeView x:Name="HostRecordTreeView" CanDrag="False" CanDragItems="False" CanReorderItems="False" AllowDrop="False"/>
         </ScrollViewer>
 
+        <Grid Grid.Row="2" Grid.ColumnSpan="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />                
+            </Grid.RowDefinitions>
+                <ComboBox x:Name="Records"
+                          Margin="490, 10"
+                          Width="150"
+                          HorizontalAlignment="Right">                            
+                </ComboBox>
+
+                <ComboBox x:Name="RecordTags"
+                          Margin="320, 10"
+                          Width="150"
+                          HorizontalAlignment="Right">
+                        <ComboBoxItem>Item 1</ComboBoxItem>
+                        <ComboBoxItem>Item 2</ComboBoxItem>
+                </ComboBox>
+
+                <ComboBox x:Name="TagValue"
+                          Margin="150, 10"
+                          Width="150"
+                          HorizontalAlignment="Right">
+                        <ComboBoxItem>Item 1</ComboBoxItem>
+                        <ComboBoxItem>Item 2</ComboBoxItem>
+                </ComboBox>
+
+            <Button x:Name="FindRecords"
+                    Margin="0, 10"
+                    HorizontalAlignment="Right">
+                    Find Records
+                </Button>
+          
+        </Grid>
+        
         <Button x:Name="OpenHostRecordFileButton"
                 Margin="0, 10"
                 HorizontalAlignment="Stretch"
                 Click="OpenHostRecordFileButton_OnClick"
-                Grid.Row="2" >
+                Grid.Row="3" >
             Open Host Record File (*.txt)
         </Button>
     </Grid>
