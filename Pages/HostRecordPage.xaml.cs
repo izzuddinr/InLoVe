@@ -69,7 +69,6 @@ public partial class HostRecordPage
                 return;
             case true when isValidTag:
                 _currentMessageBuffer.Add(message);
-                FinalizeCurrentMessage();
                 break;
         }
     }

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using InLoVe.Objects;
 using InLoVe.Services;
 using InLoVe.Utils;
@@ -14,9 +17,11 @@ public partial class Iso8583ParsingPage
     private readonly PubSubService? _pubSubService;
 
     private readonly DispatcherQueue _dispatcherQueue;
-    private readonly List<string> _currentMessageBuffer = [];
+    private readonly ConcurrentQueue<LogEntry> _logEntryQueue = new();
+    private readonly List<string> _currentMessageBuffer = new();
 
     private bool _isParsingMessage;
+    private CancellationTokenSource? _processingCancellationTokenSource;
 
     public Iso8583ParsingPage()
     {
@@ -27,47 +32,74 @@ public partial class Iso8583ParsingPage
 
         _pubSubService = App.Services.GetService<PubSubService>();
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+
+        StartBackgroundProcessing();
+    }
+
+    private void StartBackgroundProcessing()
+    {
+        _processingCancellationTokenSource = new CancellationTokenSource();
+        Task.Run(() => ProcessLogEntries(_processingCancellationTokenSource.Token));
+    }
+
+    private void StopBackgroundProcessing()
+    {
+        _processingCancellationTokenSource?.Cancel();
     }
 
     private void OnLogEntryReceived(object eventData)
     {
-        if (eventData is not LogEntry logEntry || string.IsNullOrWhiteSpace(logEntry.Message))
-            return;
-
-        _dispatcherQueue.TryEnqueue(() => { ProcessLogEntry(logEntry); });
+        if (eventData is LogEntry logEntry && !string.IsNullOrWhiteSpace(logEntry.Message))
+        {
+            _logEntryQueue.Enqueue(logEntry);
+        }
     }
 
-    private void ProcessLogEntry(LogEntry logEntry)
+    private async Task ProcessLogEntries(CancellationToken cancellationToken)
     {
-        var message = logEntry.Message;
-        var isValidTag = !string.IsNullOrEmpty(logEntry.Tag) && logEntry.Tag.Contains("Operation.kt");
-        var isIsoMessageLog = !string.IsNullOrEmpty(message) && (message.Contains("packRequest") || message.Contains("unpackResponse")) && message.Contains('|');
-
-        if (_isParsingMessage && isValidTag && !message.Contains('|'))
+        while (!cancellationToken.IsCancellationRequested)
         {
-            Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
-            FinalizeCurrentMessage();
-        }
-
-        if (isValidTag && isIsoMessageLog)
-        {
-            Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
-            if (_isParsingMessage)
+            if (_logEntryQueue.TryDequeue(out var logEntry))
             {
+                await ProcessLogEntryAsync(logEntry);
+            }
+            else
+            {
+                await Task.Delay(100, cancellationToken); // Avoid busy-waiting
+            }
+        }
+    }
+
+    private Task ProcessLogEntryAsync(LogEntry logEntry)
+    {
+        return Task.Run(() =>
+        {
+            var message = logEntry.Message;
+            var isValidTag = !string.IsNullOrEmpty(logEntry.Tag) && logEntry.Tag.Contains("Operation.kt");
+            var isIsoMessageLog = !string.IsNullOrEmpty(message) && (message.Contains("packRequest") || message.Contains("unpackResponse")) && message.Contains('|');
+
+            if (_isParsingMessage && isValidTag && !message.Contains('|'))
+            {
+                Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
                 FinalizeCurrentMessage();
             }
 
-            _isParsingMessage = true;
-        }
+            if (isValidTag && isIsoMessageLog)
+            {
+                Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
+                if (_isParsingMessage)
+                {
+                    FinalizeCurrentMessage();
+                }
 
-        switch (_isParsingMessage)
-        {
-            case false:
-                return;
-            case true when isValidTag:
+                _isParsingMessage = true;
+            }
+
+            if (_isParsingMessage && isValidTag)
+            {
                 _currentMessageBuffer.Add(message);
-                break;
-        }
+            }
+        });
     }
 
     private void FinalizeCurrentMessage()
@@ -79,7 +111,7 @@ public partial class Iso8583ParsingPage
         Console.WriteLine($"fullMessage: {fullMessage}");
         var isoMsg = Iso8583Parser.ParseIsoMessage(fullMessage);
 
-        AddMessageToTreeView(isoMsg);
+        _dispatcherQueue.TryEnqueue(() => AddMessageToTreeView(isoMsg));
         _currentMessageBuffer.Clear();
         _isParsingMessage = false;
     }
@@ -106,7 +138,7 @@ public partial class Iso8583ParsingPage
         foreach (var data in isoMsg.DataElements)
         {
             var subfieldNode = new TreeViewNode();
-            var length = data.Value.Length.ToString()?.PadLeft(4, '0');
+            var length = data.Value.Length?.ToString().PadLeft(4, '0');
             var values = data.Value.Value;
 
             if (data.Value.Length == null && data.Value.Value.Count == 1)
