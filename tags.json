@@ -1,0 +1,109 @@
+{
+  "defaultAccount": [
+    "10",
+    "20",
+    "30"
+  ],
+  "cardSaleEnable": [
+    "true",
+    "false"
+  ],
+  "cardCashEnable": [
+    "true",
+    "false"
+  ],
+  "cardVoidCashEnable": [
+    "true",
+    "false"
+  ],
+  "enabled": [
+    "true",
+    "false"
+  ],
+  "emvEnabled": [
+    "true",
+    "false"
+  ],
+  "clessEnabled": [
+    "true",
+    "false"
+  ],
+  "manualEnabled": [
+    "true",
+    "false"
+  ],
+  "swipeEnabled": [
+    "true",
+    "false"
+  ],
+  "txnAuthorityRequirement": [
+    "PIN_MANDATORY",
+    "PIN_OR_SIGNATURE",
+    "SIGNATURE_MANDATORY_NO_PIN"
+  ],
+  "magstripePinRequired": [
+    "true",
+    "false"
+  ],
+  "manualPinRequired": [
+    "true",
+    "false"
+  ],
+  "cardPinBypassEnable": [
+    "true",
+    "false"
+  ],
+  "cvcPrompt": [
+    "OFF",
+    "MANUAL_ENTRY",
+    "MANUAL_AND_SWIPED",
+    "CARD_NOT_PRESENT",
+    "ECOMMERCE_PHONE_ORDER"
+  ],
+  "cvvBypassCheck": [
+    "NO_CHECK",
+    "UNREADABLE_AND_NOT_PRESENT_OPTIONS",
+    "UNREADABLE_AND_NOT_PRESENT_AND_BYPASS_OPTIONS"
+  ],
+  "checkSvc": [
+    "true",
+    "false"
+  ],
+  "luhnCheckMode": [
+    "OFF",
+    "MANUAL",
+    "MANUAL_SWIPE",
+    "SWIPE",
+    "OFFLINE_ONLY"
+  ],
+  "expDateCheckMode": [
+    "OFF",
+    "MANUAL",
+    "MANUAL_SWIPE",
+    "SWIPE",
+    "ALL",
+    "OFFLINE_ONLY"
+  ],
+  "accountGroupingCodeOnline": [
+    "1",
+    "2",
+    "3"
+  ],
+  "accountGroupingCodeOffline": [
+    "1",
+    "2",
+    "3"
+  ],
+  "addressVerification": [
+    "OFF",
+    "ZIP_CODE",
+    "ZIP_CODE_ADDRS",
+    "ADDRS"
+  ],
+  "addressVerificationSwipe": [
+    "OFF",
+    "ZIP_CODE",
+    "ZIP_CODE_ADDRS",
+    "ADDRS"
+  ]
+}

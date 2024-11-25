@@ -13,7 +13,14 @@ using Microsoft.UI.Xaml.Controls;
 using Newtonsoft.Json.Linq;
 using WinRT.Interop;
 
-
+using System.Diagnostics;
+using Windows.UI;
+using System.Drawing;
+using Color = Windows.UI.Color;
+using Microsoft.UI.Xaml.Media;
+using ABI.Windows.UI;
+using Microsoft.UI;
+using Newtonsoft.Json;
 namespace InLoVe.Pages;
 
 public partial class HostRecordPage
@@ -27,6 +34,14 @@ public partial class HostRecordPage
     private bool _isParsingMessage;
 
     private string[] record = { "A Records", "X Records", "C Records" };
+
+    private string[] AX_record = { "", "defaultAccount"};
+
+    private string[] C_record = { "", "cardSaleEnable", "cardCashEnable", "cardVoidCashEnable", "enabled", "emvEnabled", "clessEnabled", "manualEnabled", "swipeEnabled",
+                                    "txnAuthorityRequirement", "magstripePinRequired", "manualPinRequired", "cardPinBypassEnable", "cvcPrompt", "cvvBypassCheck", "checkSvc",
+                                    "luhnCheckMode", "expDateCheckMode", "accountGroupingCodeOnline", "accountGroupingCodeOffline","addressVerification", "addressVerificationSwipe"};
+
+
 
     public HostRecordPage()
     {
@@ -129,7 +144,7 @@ public partial class HostRecordPage
     }
 
     private void AddJsonElementToTreeView(TreeViewNode parentNode, JToken value)
-    {
+    {       
         switch (value)
         {
             case JObject nestedObject:
@@ -174,7 +189,9 @@ public partial class HostRecordPage
 
                     var childNode = new TreeViewNode { Content = content ?? $"{i}" };
                     AddJsonElementToTreeView(childNode, array[i]);
-                    parentNode.Children.Add(childNode);
+                    parentNode.Children.Add(childNode);            
+                    
+
                 }
 
                 break;
@@ -225,4 +242,96 @@ public partial class HostRecordPage
             return null;
         }
     }
+
+
+
+    public static Dictionary<string, List<string>> ParseJsonFromFile()
+    {
+        try
+        {
+            // Read the entire content of the file as a string
+            string json = File.ReadAllText(@"tags.json");
+
+            // Deserialize the JSON string into a dictionary where keys are strings and values are lists of strings
+            Dictionary<string, List<string>> parsedData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+
+            return parsedData;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error reading or parsing the file: " + ex.Message);
+            return null;
+        }
+    }
+
+
+    public void Records_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Records.SelectedItem == null)
+        {
+            RecordTags.ItemsSource = null;
+            TagValue.ItemsSource = null;
+            return;
+        }
+
+        if (Records.SelectedItem.ToString() == "A Records")
+        {
+            RecordTags.ItemsSource = AX_record;
+        }
+
+        if (Records.SelectedItem.ToString() == "X Records")
+        {
+            RecordTags.ItemsSource = AX_record;
+        }
+
+        if (Records.SelectedItem.ToString() == "C Records")
+        {
+            RecordTags.ItemsSource = C_record;
+        }
+
+    }
+
+    public void RecordTags_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (RecordTags.SelectedItem == null)
+        {
+            TagValue.ItemsSource = null;
+            return;
+        }
+
+        var Tags = ParseJsonFromFile();
+
+        // Check if the dictionary is not null
+        if (Tags == null)
+        {
+            Console.WriteLine("Failed to parse JSON.");
+            return;
+        }
+
+        // Get the selected key from RecordTags (assumed to be a string)
+        string selectedTags = RecordTags.SelectedItem.ToString();
+
+        // Check if the selected key exists in the dictionary
+        if (Tags.ContainsKey(selectedTags))
+        {
+            // If the key is found, get the corresponding value (List<string>) and set it as the ItemsSource of TagValue
+            TagValue.ItemsSource = Tags[selectedTags];
+        }
+        else
+        {
+            // If the key does not exist in the dictionary, clear the TagValue ItemsSource
+            TagValue.ItemsSource = null;
+            Console.WriteLine($"Key '{selectedTags}' not found in the dictionary.");
+        }
+    }
+
+    public void FindRecordButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        //Debug.WriteLine("Find Record now!");
+
+
+
+    }
+
+
 }
