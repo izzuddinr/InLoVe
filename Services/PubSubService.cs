@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace InLoVe.Services;
+namespace Qatalyst.Services;
 
 public class PubSubService
 {

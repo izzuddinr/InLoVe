@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using InLoVe.Objects;
-using InLoVe.Services;
-using InLoVe.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
+using Qatalyst.Objects;
+using Qatalyst.Services;
+using Qatalyst.Utils;
 
-namespace InLoVe.Pages;
+namespace Qatalyst.Pages;
 
 public sealed partial class LogMonitoringPage
 {

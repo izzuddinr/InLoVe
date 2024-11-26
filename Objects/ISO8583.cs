@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace InLoVe.Objects;
+namespace Qatalyst.Objects;
 
 public class ISO8583(string? messageType = null)
 {
@@ -33,4 +33,6 @@ public class ISO8583(string? messageType = null)
         DataElements.TryGetValue(field, out var dataElement);
         return dataElement;
     }
+
+    public bool IsRequestMsg() => MessageType.EndsWith("00") || MessageType.EndsWith("20");
 }

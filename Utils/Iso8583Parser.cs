@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using InLoVe.Objects;
+using Qatalyst.Objects;
 
-namespace InLoVe.Utils;
+namespace Qatalyst.Utils;
 
 public static class Iso8583Parser
 {

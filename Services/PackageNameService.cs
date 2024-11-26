@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace InLoVe.Services;
+namespace Qatalyst.Services;
 
 public class PackageNameService
 {

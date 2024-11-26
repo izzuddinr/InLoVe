@@ -4,7 +4,7 @@ using Windows.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-namespace InLoVe.Utils;
+namespace Qatalyst.Utils;
 
 public static class ColorManager
 {

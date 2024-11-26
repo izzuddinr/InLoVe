@@ -1,9 +1,9 @@
 <Page
-    x:Class="InLoVe.Pages.Iso8583ParsingPage"
+    x:Class="Qatalyst.Pages.Iso8583ParsingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:local="using:InLoVe.Pages">
+    xmlns:local="using:Qatalyst.Pages">
 
     <Page.Resources>
         <!-- Style for TreeViewItem -->

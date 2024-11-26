@@ -1,0 +1,12 @@
+{
+  "TAG": [
+    "LogonOperation.kt",
+    "FinancialOperation.kt",
+    "BaseTransactionOperation.kt",
+    "ReversalOperation.kt",
+    "KeyRequestOperation.kt",
+    "ConfigDownloadOperation.kt"
+  ],
+  "PACKAGE": [
+  ]
+}

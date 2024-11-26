@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using InLoVe.Objects;
 using Microsoft.Extensions.DependencyInjection;
+using Qatalyst.Objects;
 
-namespace InLoVe.Services;
+namespace Qatalyst.Services;
 
 public class LogStorageService
 {

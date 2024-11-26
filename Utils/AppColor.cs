@@ -1,4 +1,4 @@
-namespace InLoVe.Utils;
+namespace Qatalyst.Utils;
 
 public enum AppColor
 {

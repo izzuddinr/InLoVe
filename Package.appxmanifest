@@ -15,9 +15,9 @@
   <mp:PhoneIdentity PhoneProductId="c0f88f19-56c6-4331-873d-589329765680" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>InLoVe</DisplayName>
+    <DisplayName>Qatalyst</DisplayName>
     <PublisherDisplayName>Izzuddin</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>Assets\icon_256.ico</Logo>
   </Properties>
 
   <Dependencies>
@@ -34,11 +34,13 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="InLoVe"
-        Description="InLoVe"
-        BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png">
+        DisplayName="Qatalyst"
+        Description="Qatalyst"
+        Square44x44Logo="Assets\icon_44.ico"
+        Square150x150Logo="Assets\icon_150.ico"
+        Square310x310Logo="Assets\icon_256.ico"
+        Wide310x150Logo="Assets\icon_256.ico"
+        BackgroundColor="transparent">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>

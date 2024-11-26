@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "InLoVe (Package)": {
+    "Qatalyst (Package)": {
       "commandName": "MsixPackage"
     },
-    "InLoVe (Unpackaged)": {
+    "Qatalyst (Unpackaged)": {
       "commandName": "Project"
     }
   }

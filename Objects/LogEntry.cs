@@ -1,11 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
-using InLoVe.Utils;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
+using Qatalyst.Utils;
 
-namespace InLoVe.Objects;
+namespace Qatalyst.Objects;
 
 public class LogEntry
 {

@@ -5,7 +5,7 @@ using System.Text.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace InLoVe.Utils;
+namespace Qatalyst.Utils;
 
 public static class HostRecordParser
 {

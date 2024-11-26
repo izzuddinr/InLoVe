@@ -1,9 +1,9 @@
 ﻿using System;
-using InLoVe.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Qatalyst.Services;
 
-namespace InLoVe;
+namespace Qatalyst;
 
 public partial class App : Application
 {
@@ -35,7 +35,6 @@ public partial class App : Application
     {
         MainAppWindow = new MainWindow();
         MainAppWindow.ExtendsContentIntoTitleBar = true;
-        MainAppWindow.Title = "InLoVe";
 
         MainAppWindow.Activate();
     }

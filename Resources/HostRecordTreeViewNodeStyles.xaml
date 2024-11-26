@@ -1,0 +1,15 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataTemplate for HostRecord -->
+    <DataTemplate x:Key="HostRecordTreeViewNodeTemplate">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <ContentPresenter Content="{Binding Content.Icon}" />
+            <TextBlock Text="{Binding Content.Value}"
+                       Foreground="{Binding Content.TextColor}"
+                       VerticalAlignment="Center" />
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>

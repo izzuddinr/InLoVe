@@ -1,15 +1,18 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
-namespace InLoVe.Services;
+namespace Qatalyst.Services;
 
 public class DeviceService
 {
+    public ObservableCollection<string> AvailableDevices = new();
+    public string SelectedDevice { get; set; }
+
     public async Task<List<string>> GetConnectedDevices()
     {
-        var deviceList = new List<string>();
-
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -28,11 +31,11 @@ public class DeviceService
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith("List of devices")) continue;
 
             var deviceId = line.Split('\t')[0];
-            deviceList.Add(deviceId);
+            AvailableDevices.Add(deviceId);
         }
 
         await process.WaitForExitAsync();
 
-        return deviceList;
+        return AvailableDevices.ToList();
     }
 }

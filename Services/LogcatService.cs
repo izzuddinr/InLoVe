@@ -1,10 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using InLoVe.Objects;
 using Microsoft.Extensions.DependencyInjection;
+using Qatalyst.Objects;
 
-namespace InLoVe.Services;
+namespace Qatalyst.Services;
 
 public class LogcatService
 {

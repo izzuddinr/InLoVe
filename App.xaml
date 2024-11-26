@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Application
-    x:Class="InLoVe.App"
+    x:Class="Qatalyst.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     RequestedTheme="Dark">
@@ -13,6 +13,9 @@
 
                 <!-- Reference to custom Resource Dictionaries -->
                 <ResourceDictionary Source="/Resources/Colors.xaml" />
+
+                <!-- Reference the HostRecordTreeViewNodeStyles.xaml file -->
+                <ResourceDictionary Source="/Resources/HostRecordTreeViewNodeStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Reference to Segoe Fluent Icons -->

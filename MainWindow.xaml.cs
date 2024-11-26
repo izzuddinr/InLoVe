@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using InLoVe.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Qatalyst.Services;
 
-namespace InLoVe;
+namespace Qatalyst;
 
 public sealed partial class MainWindow : Window
 {

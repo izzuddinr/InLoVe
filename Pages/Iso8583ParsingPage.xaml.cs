@@ -3,17 +3,21 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using InLoVe.Objects;
-using InLoVe.Services;
-using InLoVe.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Qatalyst.Controls;
+using Qatalyst.Objects;
+using Qatalyst.Services;
+using Qatalyst.Utils;
 
-namespace InLoVe.Pages;
+namespace Qatalyst.Pages;
 
 public partial class Iso8583ParsingPage
 {
+    private readonly ConfigService? _configService;
     private readonly PubSubService? _pubSubService;
 
     private readonly DispatcherQueue _dispatcherQueue;
@@ -30,6 +34,7 @@ public partial class Iso8583ParsingPage
 
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
+        _configService = App.Services.GetService<ConfigService>();
         _pubSubService = App.Services.GetService<PubSubService>();
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
 
@@ -75,30 +80,25 @@ public partial class Iso8583ParsingPage
         return Task.Run(() =>
         {
             var message = logEntry.Message;
-            var isValidTag = !string.IsNullOrEmpty(logEntry.Tag) && logEntry.Tag.Contains("Operation.kt");
-            var isIsoMessageLog = !string.IsNullOrEmpty(message) && (message.Contains("packRequest") || message.Contains("unpackResponse")) && message.Contains('|');
 
-            if (_isParsingMessage && isValidTag && !message.Contains('|'))
-            {
-                Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
-                FinalizeCurrentMessage();
-            }
+            var isValidTag = !logEntry.Tag.IsNullOrEmpty() &&
+                             _configService != null &&
+                             _configService.Iso8583Filter.Tag.Contains(logEntry.Tag);
+
+            var isIsoMessageLog = !message.IsNullOrEmpty() &&
+                                  message.Contains('|') &&
+                                  ContainsValidKeywords(message);
+
+            if (_isParsingMessage && isValidTag && !message.Contains('|')) FinalizeCurrentMessage();
 
             if (isValidTag && isIsoMessageLog)
             {
                 Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
-                if (_isParsingMessage)
-                {
-                    FinalizeCurrentMessage();
-                }
-
+                if (_isParsingMessage) FinalizeCurrentMessage();
                 _isParsingMessage = true;
             }
 
-            if (_isParsingMessage && isValidTag)
-            {
-                _currentMessageBuffer.Add(message);
-            }
+            if (_isParsingMessage && isValidTag) _currentMessageBuffer.Add(message);
         });
     }
 
@@ -121,17 +121,27 @@ public partial class Iso8583ParsingPage
         // Create a new TreeView for this ISO8583 message
         var newTreeView = new TreeView
         {
-            Margin = new Microsoft.UI.Xaml.Thickness(5),
+            Margin = new Thickness(5),
             AllowDrop = false,
             CanDragItems = false,
             CanReorderItems = false,
             CanDrag = false,
+            ItemTemplate = Application.Current.Resources["HostRecordTreeViewNodeTemplate"] as DataTemplate
         };
+
+        var color = isoMsg.IsRequestMsg()
+            ? ColorManager.GetBrush(AppColor.InfoColor.ToString())
+            : ColorManager.GetBrush(AppColor.WarningColor.ToString());
 
         // Create the root node using the MTI
         var rootNode = new TreeViewNode
         {
-            Content = $"MTI: {isoMsg.MessageType}"
+            Content = new HostRecord
+            {
+                Tag = "MTI",
+                Value = $"MTI: {isoMsg.MessageType}",
+                TextColor = color
+            }
         };
 
         // Add fields to the root node
@@ -143,22 +153,22 @@ public partial class Iso8583ParsingPage
 
             if (data.Value.Length == null && data.Value.Value.Count == 1)
             {
-                subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : {values[0]}";
+                subfieldNode.Content = CreateNewNode(data, color);
                 rootNode.Children.Add(subfieldNode);
                 continue;
             }
 
             if (data.Key == 55)
             {
-                rootNode.Children.Add(BuildEmvDataTree(data.Key, data.Value));
+                rootNode.Children.Add(BuildEmvDataTree(data.Key, data.Value, color));
                 continue;
             };
 
-            subfieldNode.Content = $"{data.Key.ToString().PadLeft(3, '0')} : ({length})";
+            subfieldNode.Content = CreateNewNode(data, color, length);
 
             foreach (var value in values)
             {
-                subfieldNode.Children.Add(new TreeViewNode { Content = value });
+                subfieldNode.Children.Add(new TreeViewNode { Content = CreateNewNode(value, color) });
             }
 
             rootNode.Children.Add(subfieldNode);
@@ -180,13 +190,15 @@ public partial class Iso8583ParsingPage
         }
     }
 
-    private TreeViewNode BuildEmvDataTree(int key, ISO8583DataElement data)
+    private TreeViewNode BuildEmvDataTree(int key, ISO8583DataElement data, Brush color)
     {
-        var subfieldNode = new TreeViewNode();
-        subfieldNode.Content = $"{key.ToString().PadLeft(3, '0')} : ({data.Length})";
+        var subfieldNode = new TreeViewNode
+        {
+            Content = CreateNewEmvNode(key, data.Length, color)
+        };
 
         var emvData = string.Join(string.Empty, data.Value);
-        subfieldNode.Children.Add(new TreeViewNode { Content = emvData});
+        subfieldNode.Children.Add(new TreeViewNode { Content = CreateNewNode(emvData, color)});
 
         var index = 0;
         while (index < emvData.Length)
@@ -206,10 +218,56 @@ public partial class Iso8583ParsingPage
             var value = emvData.Substring(index, length * 2);
             index += length * 2;
 
-            var childNode = new TreeViewNode();
-            childNode.Content = $"{tag,-8}: ({length}) {value}";
+            var childNode = new TreeViewNode
+            {
+                Content = CreateNewEmvNode(tag, length, value, color)
+            };
             subfieldNode.Children.Add(childNode);
         }
         return subfieldNode;
     }
+
+    private static HostRecord CreateNewNode(string value, Brush color) => new() { Value = value, TextColor = color};
+
+
+    private static HostRecord CreateNewNode(KeyValuePair<int,ISO8583DataElement> data, Brush color, string? length = null)
+    {
+        var values = data.Value.Value;
+
+        var value = length != null
+            ? $"{data.Key.ToString().PadLeft(3, '0')} : ({length})"
+            : $"{data.Key.ToString().PadLeft(3, '0')} : {values[0]}";
+
+        return new HostRecord
+        {
+            Tag = $"{data.Key.ToString().PadLeft(3, '0')}",
+            Value = value,
+            TextColor = color
+        };
+    }
+
+    private static HostRecord CreateNewEmvNode(int key, int? length, Brush color)
+    {
+        var value = $"{key.ToString().PadLeft(3, '0')} : ({length})";
+
+        return new HostRecord
+        {
+            Tag = "EMV DATA",
+            Value = value,
+            TextColor = color
+        };
+    }
+
+    private static HostRecord CreateNewEmvNode(string? tag, int length, string? value, Brush color)
+    {
+        return new HostRecord
+        {
+            Tag = $"{tag,-8}",
+            Value = $"{tag,-8}: ({length}) {value}",
+            TextColor = color
+        };
+    }
+
+    private static bool ContainsValidKeywords(string message) =>
+        message.Contains("packRequest") || message.Contains("unpackResponse");
 }

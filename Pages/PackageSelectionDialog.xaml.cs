@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.UI.Xaml.Controls;
 
-namespace InLoVe.Pages;
+namespace Qatalyst.Pages;
 
 public sealed partial class PackageSelectionDialog
 {

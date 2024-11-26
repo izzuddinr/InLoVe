@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace InLoVe.Objects;
+namespace Qatalyst.Objects;
 
 public class ISO8583DataElement(int? length, List<string> value)
 {
