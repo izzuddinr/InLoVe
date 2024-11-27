@@ -5,12 +5,12 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Qatalyst.Controls;
 
-public class HostRecord : INotifyPropertyChanged
+public partial class HostRecord : INotifyPropertyChanged
 {
-    private readonly string _value;
-    private readonly string _tag;
-    private readonly object? _icon;
-    private readonly Brush? _textColor;
+    private string _value;
+    private string _tag;
+    private object? _icon;
+    private Brush? _textColor;
 
     public HostRecord(string value = "", object? icon = null, Brush? textColor = null)
     {
@@ -22,7 +22,7 @@ public class HostRecord : INotifyPropertyChanged
     public object? Icon
     {
         get => _icon;
-        init
+        set
         {
             _icon = value;
             OnPropertyChanged(nameof(Icon));
@@ -32,7 +32,7 @@ public class HostRecord : INotifyPropertyChanged
     public string Tag
     {
         get => _tag;
-        init
+        set
         {
             _tag = value;
             OnPropertyChanged(nameof(Tag));
@@ -42,7 +42,7 @@ public class HostRecord : INotifyPropertyChanged
     public Brush? TextColor
     {
         get => _textColor;
-        init
+        set
         {
             _textColor = value;
             OnPropertyChanged(nameof(TextColor));
@@ -52,7 +52,7 @@ public class HostRecord : INotifyPropertyChanged
     public string Value
     {
         get => _value;
-        init
+        set
         {
             _value = value;
             OnPropertyChanged(nameof(Value));

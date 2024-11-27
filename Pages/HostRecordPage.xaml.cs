@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json.Linq;
 using WinRT.Interop;
 using Newtonsoft.Json;
@@ -27,7 +28,11 @@ public partial class HostRecordPage
 
     private bool _isParsingMessage;
     private static TreeView? _unfilteredTreeView;
-    private static TreeView? _filteredTreeView;
+
+    private static JObject _currentActiveJson = new();
+
+    private readonly SolidColorBrush _normalColorBrush;
+    private readonly SolidColorBrush _filteredColorBrush;
 
     public HostRecordPage()
     {
@@ -42,12 +47,15 @@ public partial class HostRecordPage
         _pubSubService = App.Services.GetService<PubSubService>();
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
 
-        initTreeView();
+        _normalColorBrush = ColorManager.GetBrush(AppColor.VerboseColor.ToString());
+        _filteredColorBrush = ColorManager.GetBrush(AppColor.StopColor.ToString());
+
+        InitTreeView();
 
         RecordTypeComboBox.ItemsSource = new List<string>{ "A Records", "X Records", "C Records", "K Records" };
     }
 
-    private void initTreeView()
+    private void InitTreeView()
     {
         var style = Application.Current.Resources["HostRecordTreeViewNodeTemplate"] as DataTemplate;
         _unfilteredTreeView = new TreeView
@@ -59,14 +67,7 @@ public partial class HostRecordPage
             ItemTemplate = style
         };
 
-        _filteredTreeView = new TreeView
-        {
-            AllowDrop = false,
-            CanDrag = false,
-            CanDragItems = false,
-            CanReorderItems = false,
-            ItemTemplate = style
-        };
+        HostRecordContentControl.Content = _unfilteredTreeView;
     }
 
     private async void OpenHostRecordFileButton_OnClick(object sender, RoutedEventArgs e)
@@ -87,12 +88,9 @@ public partial class HostRecordPage
 
             var file = await openPicker.PickSingleFileAsync();
             var fileContents = await File.ReadAllTextAsync(file.Path);
-            var hostRecordJson = HostRecordParser.ParseHostRecord(fileContents);
+            _currentActiveJson = HostRecordParser.ParseHostRecord(fileContents);
 
-            AddMessageToTreeView(hostRecordJson);
-            SwitchTreeView(false);
-            Console.WriteLine($"_fullTreeView: {_unfilteredTreeView == null}");
-            Console.WriteLine($"_fullTreeView.RootNodes.Count: {_unfilteredTreeView.RootNodes.Count}");
+            AddMessageToTreeView(_currentActiveJson);
         }
         catch (Exception ex)
         {
@@ -141,46 +139,74 @@ public partial class HostRecordPage
 
     private void FinalizeCurrentMessage()
     {
-        var hostRecordJson = HostRecordParser.ParseHostRecord(_currentMessageBuffer);
+        _currentActiveJson = HostRecordParser.ParseHostRecord(_currentMessageBuffer);
 
-        if (hostRecordJson == null) return;
+        if (_currentActiveJson == null) return;
 
-        AddMessageToTreeView(hostRecordJson);
+        AddMessageToTreeView(_currentActiveJson);
         _currentMessageBuffer.Clear();
         _isParsingMessage = false;
     }
 
-    private void AddMessageToTreeView(JObject hostRecordJson)
+    private void AddMessageToTreeView(JObject hostRecordJson, bool isFilteredView = false)
     {
         _unfilteredTreeView.RootNodes.Clear();
+        Console.WriteLine($"Cleared unfiltered treeview");
 
         foreach (var (key, value) in hostRecordJson)
         {
+            var recordTypeFilter = RecordTypeComboBox.SelectedItem?.ToString() switch {
+                "A Records" => HostRecordTag.A_RECORD,
+                "X Records" => HostRecordTag.X_RECORD,
+                "C Records" => HostRecordTag.C_RECORD,
+                "K Records" => HostRecordTag.K_RECORD,
+                _ => HostRecordTag.UNKNOWN
+            };
+
             var tag = key switch
             {
                 "capkDataList" => HostRecordTag.K_RECORD,
                 "hostAllCardConfigs" => HostRecordTag.CARD_CONFIGS,
                 _ => HostRecordTag.UNKNOWN
             };
+
+            var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter;
+
             var rootNode = new TreeViewNode
             {
                 Content = new HostRecord
                 {
                     Tag = tag.ToString(),
                     Value = $"{tag.GetHostRecordContent()}",
-                    TextColor = ColorManager.GetBrush(AppColor.StartColor.ToString())
+                    TextColor = isTypeMatchFilter switch
+                    {
+                        true => _filteredColorBrush,
+                        false => _normalColorBrush
+                    }
                 }
             };
-            Console.WriteLine($"rootNode - tag: {(rootNode.Content as HostRecord)?.Tag} value: {(rootNode.Content as HostRecord)?.Value}" );
-            AddJsonElementToTreeView(rootNode, value);
+            //Console.WriteLine($"rootNode - tag: {(rootNode.Content as HostRecord)?.Tag} value: {(rootNode.Content as HostRecord)?.Value}" );
+            AddJsonElementToTreeView(rootNode, value, isFilteredView);
 
             if (tag != HostRecordTag.K_RECORD) continue;
             _unfilteredTreeView.RootNodes.Add(rootNode);
         }
     }
 
-    private void AddJsonElementToTreeView(TreeViewNode parentNode, JToken value)
+    private void AddJsonElementToTreeView(TreeViewNode parentNode, JToken value, bool isFilteredView)
     {
+        var recordTypeFilter = RecordTypeComboBox.SelectedItem?.ToString() switch {
+            "A Records" => HostRecordTag.A_RECORD,
+            "X Records" => HostRecordTag.X_RECORD,
+            "C Records" => HostRecordTag.C_RECORD,
+            "K Records" => HostRecordTag.K_RECORD,
+            _ => HostRecordTag.UNKNOWN
+        };
+
+        var recordTagFilter = RecordTagComboBox.SelectedItem?.ToString();
+
+        var recordValueFilter = RecordValueTextBox.Text;
+
         switch (value)
         {
             case JObject nestedObject:
@@ -196,32 +222,42 @@ public partial class HostRecordPage
                             _ => HostRecordTag.UNKNOWN
                         };
 
+                        var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter;
+
                         var childNode = new TreeViewNode
                         {
                             Content = new HostRecord
                             {
                                 Tag = tag.ToString(),
                                 Value = $"{tag.GetHostRecordContent()}",
-                                TextColor = ColorManager.GetBrush(AppColor.StartColor.ToString())
+                                TextColor = isFilteredView && isTypeMatchFilter ? _filteredColorBrush : _normalColorBrush
                             }
                         };
-                        Console.WriteLine($"childNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
-                        AddJsonElementToTreeView(childNode, nestedValue);
+
+                        //Console.WriteLine($"childNestedNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
+                        AddJsonElementToTreeView(childNode, nestedValue, isFilteredView);
                         _unfilteredTreeView.RootNodes.Add(childNode);
                     }
                     else
                     {
                         if (key == "hostId") continue;
+                        var isTagMatchFilter = isFilteredView && key == recordTagFilter;
+                        var isValueMatchFilter = isFilteredView &&
+                                                 (RecordValueTextBox.Text.IsNullOrWhiteSpace() ||
+                                                 value.Contains(recordValueFilter ?? string.Empty));
+
+                        // Console.WriteLine($"childNode Filter - tag: {key} filter: {recordTagFilter}" );
                         var childNode = new TreeViewNode
                         {
                             Content = new HostRecord
                             {
                                 Tag = key,
                                 Value = $"{key}: {nestedValue}",
-                                TextColor = ColorManager.GetBrush(AppColor.WarningColor.ToString())
+                                TextColor = isFilteredView && isTagMatchFilter && isValueMatchFilter ? _filteredColorBrush : _normalColorBrush
                             }
                         };
-                        Console.WriteLine($"childNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
+
+                        // Console.WriteLine($"childNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
                         parentNode.Children.Add(childNode);
                     }
                 }
@@ -233,34 +269,23 @@ public partial class HostRecordPage
                 {
                     var tag = (parentNode.Content as HostRecord)?.Tag;
                     var content = ExtractValueFromArray(array[i], tag);
+                    var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter.ToString();
+
                     var childNode = new TreeViewNode
                     {
                         Content = new HostRecord
                         {
                             Tag = tag,
                             Value = content ?? $"{i}",
-                            TextColor = ColorManager.GetBrush(AppColor.ErrorColor.ToString())
+                            TextColor = isFilteredView && isTypeMatchFilter ? _filteredColorBrush : _normalColorBrush
                         }
                     };
-                    Console.WriteLine($"childNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
-                    AddJsonElementToTreeView(childNode, array[i]);
+
+                    // Console.WriteLine($"childArrayNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
+                    AddJsonElementToTreeView(childNode, array[i], isFilteredView);
                     parentNode.Children.Add(childNode);
                 }
 
-                break;
-
-            default:
-                var valueNode = new TreeViewNode
-                {
-                    Content = new HostRecord
-                    {
-                        Tag = $"{value}",
-                        Value = $"{value}",
-                        TextColor = ColorManager.GetBrush(AppColor.ErrorColor.ToString())
-                    },
-                };
-                Console.WriteLine($"valueNode - tag: {(valueNode.Content as HostRecord)?.Tag} value: {(valueNode.Content as HostRecord)?.Value}" );
-                parentNode.Children.Add(valueNode);
                 break;
         }
     }
@@ -344,93 +369,17 @@ public partial class HostRecordPage
 
     public void FindRecordButton_OnClick(object sender, RoutedEventArgs e)
     {
-        _filteredTreeView.RootNodes.Clear();
-
-        var unfilteredTree = _unfilteredTreeView;
-
-        if (RecordTypeComboBox.SelectedItem == null || RecordTagComboBox.SelectedItem == null) return;
-
-        var recordType = RecordTypeComboBox.SelectedItem?.ToString() switch {
-            "A Records" => HostRecordTag.A_RECORD,
-            "X Records" => HostRecordTag.X_RECORD,
-            "C Records" => HostRecordTag.C_RECORD,
-            "K Records" => HostRecordTag.K_RECORD,
-            _ => HostRecordTag.UNKNOWN
-        };
-
-        var recordTag = RecordTagComboBox.SelectedItem?.ToString();
-
-        var recordValue = RecordValueTextBox.Text;
-
-        var rootNode = new TreeViewNode();
-
-        foreach (var treeViewNode in unfilteredTree.RootNodes)
-        {
-            if (treeViewNode.Content is not HostRecord hostRecord || hostRecord.Tag.ToHostRecordTag() != recordType) continue;
-            rootNode = new TreeViewNode
-            {
-                Content = new HostRecord
-                {
-                    Tag = $"{hostRecord.Tag}",
-                    Value = $"{hostRecord.Value}",
-                    TextColor = hostRecord.TextColor
-                }
-            };
-        }
-
-        _filteredTreeView.RootNodes.Add(rootNode);
-        Console.WriteLine($"RootNodes: {_filteredTreeView.RootNodes.Count}");
-
-        var uParentNode =
-            unfilteredTree.RootNodes.Where(uRootNode =>
-                uRootNode.Content is HostRecord hostRecord && hostRecord.Tag.ToHostRecordTag() == recordType
-            ).ToList()[0];
-
-        var uRecordNodes = uParentNode.Children.ToList();
-        var fRecordNodes = new List<TreeViewNode>();
-        foreach (var uRecordNode in uRecordNodes)
-        {
-            var fRecordNode = new TreeViewNode
-            {
-                Content = new HostRecord
-                {
-                    Tag = $"{(uRecordNode.Content as HostRecord)?.Tag}",
-                    Value =$"{(uRecordNode.Content as HostRecord)?.Value}",
-                    TextColor = ColorManager.GetBrush(AppColor.ErrorColor.ToString())
-                },
-            };
-
-            var node = uRecordNode.Children
-                .ToList()
-                .Find(_node =>
-                    _node.Content is HostRecord hostRecord && hostRecord.Tag == recordTag &&
-                    hostRecord.Value.Contains(recordValue));
-
-
-            if (node == null) continue;
-
-            fRecordNode.Children.Add(node);
-            fRecordNodes.Add(fRecordNode);
-        }
-
-        foreach (var root in _filteredTreeView.RootNodes)
-        {
-            root.Children.Clear();
-        }
-
-        fRecordNodes.ForEach(_filteredTreeView.RootNodes[0].Children.Add);
-        SwitchTreeView(true);
+        if (RecordTypeComboBox.SelectedIndex > -1 && RecordTagComboBox.SelectedIndex > -1)
+            AddMessageToTreeView(_currentActiveJson, true);
     }
 
     private void ClearFilterRecordButton_OnClick(object sender, RoutedEventArgs e)
     {
-        SwitchTreeView(false);
-    }
+        RecordTypeComboBox.SelectedIndex = -1;
+        RecordTagComboBox.SelectedIndex = -1;
+        RecordTypeComboBox.Text = string.Empty;
 
-    private void SwitchTreeView(bool showFiltered)
-    {
-        HostRecordContentControl.Content = null;
-        HostRecordContentControl.Content = showFiltered ? _filteredTreeView : _unfilteredTreeView;
+        AddMessageToTreeView(_currentActiveJson);
     }
 
     private void PrintToConsole(TreeView treeView)

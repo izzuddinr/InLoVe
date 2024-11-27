@@ -17,45 +17,34 @@
 		<AssemblyName>Qatalyst</AssemblyName>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Content Remove="Assets\QAtalyst.png" />
-	  <Content Remove="Assets\QAtalyst.svg" />
-	  <Content Update="Assets\HomePageLogo.png">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Update="Assets\icon_44.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
-	  <Content Update="Assets\icon_64.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
-	  <Content Update="Assets\icon_150.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
-	  <Content Update="Assets\icon_256.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
+		<Content Remove="Assets\QAtalyst.png" />
+		<Content Remove="Assets\QAtalyst.svg" />
+		<Content Update="Assets\HomePageLogo.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Update="Assets\icon_44.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="Assets\icon_64.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="Assets\icon_150.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="Assets\icon_256.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="AnimatedVisuals\Qatalyst.cs" />
-		<Content Include="Assets\SplashScreen.scale-200.png" />
-		<Content Include="Assets\LockScreenLogo.scale-200.png" />
-		<Content Include="Assets\Square150x150Logo.scale-200.png" />
-		<Content Include="Assets\Square44x44Logo.scale-200.png" />
-		<Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-		<Content Include="Assets\StoreLogo.png" />
-		<Content Include="Assets\Wide310x150Logo.scale-200.png" />
 		<Content Update="Assets\Segoe Fluent Icons.ttf">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Update="Assets\Fonts\SegoeFluentIcons.ttf">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Update="Assets\QAtalyst_64.ico">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Update="Assets\Qatalyst.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
 
@@ -63,47 +52,32 @@
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
 
-	<!--
-    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
-    Tools extension to be activated for this project even if the Windows App SDK Nuget
-    package has not yet been restored.
-  -->
 	<ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<ProjectCapability Include="Msix" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.WinUI.Lottie" Version="8.1.240821" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Remove="Assets\QAtalyst.png" />
-	  <Resource Include="Assets\QAtalyst.png">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Resource>
+		<None Remove="Assets\QAtalyst.png" />
 	</ItemGroup>
 	<ItemGroup>
-	  <AdditionalFiles Include="ISO8583FILTER.json">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </AdditionalFiles>
-	  <None Remove="CAPK.json" />
-	  <AdditionalFiles Include="CAPK.json">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </AdditionalFiles>
+		<AdditionalFiles Include="ISO8583FILTER.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</AdditionalFiles>
+		<None Remove="CAPK.json" />
+		<AdditionalFiles Include="CAPK.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</AdditionalFiles>
 	</ItemGroup>
 
-	<!--
-    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
-    Explorer "Package and Publish" context menu entry to be enabled for this project even if
-    the Windows App SDK Nuget package has not yet been restored.
-  -->
 	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
 	</PropertyGroup>
 
-	<!-- Publish Properties -->
 	<PropertyGroup>
 		<PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
 		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
