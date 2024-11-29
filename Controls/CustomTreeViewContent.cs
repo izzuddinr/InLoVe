@@ -5,14 +5,14 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Qatalyst.Controls;
 
-public partial class HostRecord : INotifyPropertyChanged
+public partial class CustomTreeViewContent : INotifyPropertyChanged
 {
     private string _value;
     private string _tag;
     private object? _icon;
     private Brush? _textColor;
 
-    public HostRecord(string value = "", object? icon = null, Brush? textColor = null)
+    public CustomTreeViewContent(string value = "", object? icon = null, Brush? textColor = null)
     {
         _value = value;
         _icon = icon;

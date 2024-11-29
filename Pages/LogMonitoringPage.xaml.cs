@@ -142,9 +142,9 @@ public sealed partial class LogMonitoringPage
     {
         try
         {
-            Console.WriteLine("Loading devices...");
             if (_deviceService == null) return;
 
+            Console.WriteLine("Loading devices...");
             var devices = await _deviceService.GetConnectedDevices();
             Devices.Clear();
             foreach (var device in devices)

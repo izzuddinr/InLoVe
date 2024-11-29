@@ -62,13 +62,27 @@ public sealed partial class MainWindow : Window
 
     private void GetLogBufferSize()
     {
-        LogBufferSize.Text = _logStorageService.GetLogBufferSize();
+        try
+        {
+            LogBufferSize.Text = _logStorageService.GetLogBufferSize();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to get log buffer size: {e}");
+        }
     }
 
     private void UpdateMemoryUsage()
     {
-        var memoryData = _logStorageService.GetCurrentMemoryUsage();
-        MemoryBar.Value = memoryData.Item1;
-        MemoryUsageTextBlock.Text = memoryData.Item2;
+        try
+        {
+            var memoryData = _logStorageService.GetCurrentMemoryUsage();
+            MemoryBar.Value = memoryData.Item1;
+            MemoryUsageTextBlock.Text = memoryData.Item2;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to Update Memory Usage: {e}");
+        }
     }
 }

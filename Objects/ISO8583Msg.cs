@@ -2,12 +2,15 @@ using System.Collections.Generic;
 
 namespace Qatalyst.Objects;
 
-public class ISO8583(string? messageType = null)
+public class ISO8583Msg(string? messageType = null)
 {
     public string MessageType { get; set; } = messageType ?? string.Empty;
     public string Bitmap { get; set; } = string.Empty;
 
+    public string RawMsg { get; set; } = string.Empty;
+
     public Dictionary<int, ISO8583DataElement> DataElements = [];
+
 
     public void AddDataElement(int field, int? length, List<string> value)
     {

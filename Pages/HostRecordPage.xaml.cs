@@ -174,7 +174,7 @@ public partial class HostRecordPage
 
             var rootNode = new TreeViewNode
             {
-                Content = new HostRecord
+                Content = new CustomTreeViewContent
                 {
                     Tag = tag.ToString(),
                     Value = $"{tag.GetHostRecordContent()}",
@@ -226,7 +226,7 @@ public partial class HostRecordPage
 
                         var childNode = new TreeViewNode
                         {
-                            Content = new HostRecord
+                            Content = new CustomTreeViewContent
                             {
                                 Tag = tag.ToString(),
                                 Value = $"{tag.GetHostRecordContent()}",
@@ -249,7 +249,7 @@ public partial class HostRecordPage
                         // Console.WriteLine($"childNode Filter - tag: {key} filter: {recordTagFilter}" );
                         var childNode = new TreeViewNode
                         {
-                            Content = new HostRecord
+                            Content = new CustomTreeViewContent
                             {
                                 Tag = key,
                                 Value = $"{key}: {nestedValue}",
@@ -267,13 +267,13 @@ public partial class HostRecordPage
             case JArray array:
                 for (var i = 0; i < array.Count; i++)
                 {
-                    var tag = (parentNode.Content as HostRecord)?.Tag;
+                    var tag = (parentNode.Content as CustomTreeViewContent)?.Tag;
                     var content = ExtractValueFromArray(array[i], tag);
                     var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter.ToString();
 
                     var childNode = new TreeViewNode
                     {
-                        Content = new HostRecord
+                        Content = new CustomTreeViewContent
                         {
                             Tag = tag,
                             Value = content ?? $"{i}",
@@ -389,16 +389,16 @@ public partial class HostRecordPage
         Console.WriteLine("=================================================");
         foreach (var root in treeView.RootNodes)
         {
-            Console.WriteLine($"{(root.Content as HostRecord)?.Value}");
+            Console.WriteLine($"{(root.Content as CustomTreeViewContent)?.Value}");
             foreach (var x in root.Children)
             {
-                Console.WriteLine($"->{(x.Content as HostRecord)?.Value}");
+                Console.WriteLine($"->{(x.Content as CustomTreeViewContent)?.Value}");
                 foreach (var y in x.Children)
                 {
-                    Console.WriteLine($"-->{(y.Content as HostRecord)?.Value}");
+                    Console.WriteLine($"-->{(y.Content as CustomTreeViewContent)?.Value}");
                     foreach (var z in y.Children)
                     {
-                        Console.WriteLine($"--->{(z.Content as HostRecord)?.Value}");
+                        Console.WriteLine($"--->{(z.Content as CustomTreeViewContent)?.Value}");
                     }
 
                 }

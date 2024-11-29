@@ -22,6 +22,7 @@ public static class Iso8583Parser
         60, // an ...120 Additional amounts
         61, // an ...120 Additional amounts
         62, // an ...120 Additional amounts
+        63, // an ...120 Additional amounts
         91, // an 1	File update code
         92, // an 2	File security code
         93, // an 5	Response indicator
@@ -34,10 +35,10 @@ public static class Iso8583Parser
         104  // ans ...100 Transaction description
     ];
 
-    public static ISO8583 ParseIsoMessage(string message)
+    public static ISO8583Msg ParseIsoMessage(string message)
     {
         var lines = message.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var isoMsg = new ISO8583();
+        var isoMsg = new ISO8583Msg();
         var currentFieldNumber = 0;
 
         foreach (var line in lines)
@@ -87,7 +88,7 @@ public static class Iso8583Parser
         return isoMsg;
     }
 
-    public static void FormatIsoDataElement(ISO8583 isoMsg)
+    public static void FormatIsoDataElement(ISO8583Msg isoMsg)
     {
         foreach (var data in isoMsg.DataElements)
         {

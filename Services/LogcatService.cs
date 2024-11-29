@@ -8,19 +8,18 @@ namespace Qatalyst.Services;
 
 public class LogcatService
 {
-    private readonly LogStorageService? _logStorageService;
-    private readonly PackageNameService? _packageNameService;
+    private LogStorageService? _logStorageService;
+    private PackageNameService? _packageNameService;
+    private AdbProcessManager _processManager;
 
     private Process? _logcatProcess;
 
-    public LogcatService()
-    {
-        _logStorageService = App.Services.GetService<LogStorageService>();
-        _packageNameService = App.Services.GetService<PackageNameService>();
-    }
-
     public async Task StartLogcat(string device)
     {
+        _processManager = App.Services.GetService<AdbProcessManager>();
+        _logStorageService = App.Services.GetService<LogStorageService>();
+        _packageNameService = App.Services.GetService<PackageNameService>();
+
         Console.WriteLine("Setting ADB Logcat buffer size to 32Mb.");
         await SetAdbLogcatBuffer(device);
 
@@ -72,8 +71,7 @@ public class LogcatService
         Console.WriteLine("Stopping logcat process.");
         if (_logcatProcess != null && _logcatProcess is not { HasExited: true })
         {
-            _logcatProcess.Kill();
-            _logcatProcess.Dispose();
+            _processManager.KillAllManagedProcesses();
             _logcatProcess = null;
             Console.WriteLine("Logcat process stopped.");
         }
