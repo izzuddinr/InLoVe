@@ -10,8 +10,7 @@ namespace Qatalyst.Services;
 
 public class DeviceService
 {
-    public ObservableCollection<string> AvailableDevices = new();
-    public string SelectedDevice { get; set; }
+    private ObservableCollection<string> AvailableDevices = [];
 
     public async Task<List<string>> GetConnectedDevices()
     {
@@ -34,6 +33,7 @@ public class DeviceService
         process.Start();
         _processManager.AddToManagedProcess(process);
         Console.WriteLine("process started...");
+        AvailableDevices.Clear();
         while (await process.StandardOutput.ReadLineAsync() is { } line)
         {
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith("List of devices")) continue;

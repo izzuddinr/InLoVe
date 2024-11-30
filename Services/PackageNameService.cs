@@ -10,9 +10,8 @@ namespace Qatalyst.Services;
 public class PackageNameService
 {
 
-    private static List<string> excludePackages = new List<string>
-    {
-        // System Daemons
+    private static List<string> excludePackages =
+    [
         "ueventd",
         "logd",
         "servicemanager",
@@ -75,8 +74,8 @@ public class PackageNameService
         "WCNSS",
         "LPASS",
         "CDSP",
-        "kthread",
-    };
+        "kthread"
+    ];
 
     private readonly PubSubService _pubSubService;
 

@@ -48,15 +48,14 @@ public class LogcatService
                 {
                     var logEntry = LogEntry.CreateFromLogLine(line);
 
-                    if (logEntry != null && logEntry.IsValid)
-                    {
-                        if (_packageNameService != null && logEntry.ProcessId != null)
-                            logEntry.PackageName = _packageNameService.GetPackageName(logEntry.ProcessId);
+                    if (logEntry is not { IsValid: true }) continue;
 
-                        if (logEntry.PackageName == string.Empty) continue;
+                    if (_packageNameService != null && logEntry.ProcessId != null)
+                        logEntry.PackageName = _packageNameService.GetPackageName(logEntry.ProcessId);
 
-                        if (_logStorageService != null) await _logStorageService.SaveLogEntryAsync(logEntry);
-                    }
+                    if (logEntry.PackageName == string.Empty) continue;
+
+                    if (_logStorageService != null) await _logStorageService.SaveLogEntryAsync(logEntry);
                 }
             }
             catch (Exception ex)
@@ -94,6 +93,8 @@ public class LogcatService
                 CreateNoWindow = true
             }
         };
+
+        Console.WriteLine($"{clearProcess.StartInfo.FileName} {clearProcess.StartInfo.Arguments}");
 
         clearProcess.Start();
         await clearProcess.WaitForExitAsync();

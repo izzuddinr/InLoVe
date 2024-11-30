@@ -9,12 +9,14 @@ namespace Qatalyst.Services
     public class ConfigService
     {
         public Dictionary<string, string> CapkDictionary { get; private set; }
+        public Dictionary<string, string> QDictionary { get; private set; }
         public ISO8583Filter Iso8583Filter { get; private set; }
 
         public ConfigService()
         {
             CapkDictionary = LoadCapkDictionary("CAPK.json");
             Iso8583Filter = LoadIso8583Filter("ISO8583FILTER.json");
+            QDictionary = LoadQDictionary("RANDOMQ.json");
         }
 
         private static Dictionary<string, string> LoadCapkDictionary(string fileName)
@@ -44,6 +46,30 @@ namespace Qatalyst.Services
                 return new ISO8583Filter();
             }
         }
+
+        private static Dictionary<string, string> LoadQDictionary(string fileName)
+        {
+            try
+            {
+                var jsonString = LoadJsonFileToString(fileName);
+                var quotes = JsonConvert.DeserializeObject<List<RandomQ>>(jsonString) ?? new List<RandomQ>();
+
+                var dictionary = new Dictionary<string, string>();
+                foreach (var quote in quotes)
+                {
+                    // Use the quote text as the key and the author as the value
+                    dictionary[quote.Text] = quote.From;
+                }
+
+                return dictionary;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading Q dictionary from {fileName}: {ex.Message}");
+                return new Dictionary<string, string>();
+            }
+        }
+
 
         private static string LoadJsonFileToString(string fileName)
         {

@@ -11,7 +11,7 @@ public class PubSubService
     {
         if (!_subscribers.ContainsKey(eventName))
         {
-            _subscribers[eventName] = new List<Action<object>>();
+            _subscribers[eventName] = [];
         }
         _subscribers[eventName].Add(handler);
     }

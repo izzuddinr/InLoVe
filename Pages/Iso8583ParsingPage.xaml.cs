@@ -30,7 +30,7 @@ public partial class Iso8583ParsingPage
 
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly ConcurrentQueue<LogEntry> _logEntryQueue = new();
-    private readonly List<string> _currentMessageBuffer = new();
+    private readonly List<string> _currentMessageBuffer = [];
 
     private List<TreeView> _isoMsgTreeView = [];
     private SolidColorBrush receiptTextColor;

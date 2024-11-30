@@ -51,7 +51,7 @@
                 VerticalScrollBarVisibility="Auto"
                 HorizontalScrollBarVisibility="Auto">
                 <RichTextBlock x:Name="ReceiptTextBlock"
-                               Padding="5"
+                               Padding="25, 5"
                                FontFamily="Consolas"
                                FontSize="14"
                                IsTextSelectionEnabled="True">

@@ -39,7 +39,14 @@ public sealed partial class MainWindow : Window
 
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
+
         if (args.SelectedItem is not NavigationViewItem { Tag: string tag }) return;
+
+        if (args.IsSettingsSelected)
+        {
+            ContentPresenter.Content = null;
+            ContentPresenter.Content = CreateFrame(typeof(Pages.SettingsPage));
+        }
 
         if (_pageFrames.TryGetValue(tag, out var value))
         {

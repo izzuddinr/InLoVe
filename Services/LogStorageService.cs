@@ -32,10 +32,14 @@ public class LogStorageService
     public Task<List<LogEntry>> LoadLogEntriesIncludingPackagesAsync(List<string> includedPackageNames)
     {
         var logEntries = _logEntries.Values
-            .Where(entry => includedPackageNames.Contains(entry.PackageName))
+            .Where(entry => includedPackageNames.Any(packageName => entry.PackageName?.Contains(packageName, StringComparison.OrdinalIgnoreCase) == true))
             .ToList();
+
+        Console.WriteLine($"Found {logEntries.Count} matching log entries");
+
         return Task.FromResult(logEntries);
     }
+
 
     public Task ClearLogEntriesAsync()
     {
