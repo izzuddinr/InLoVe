@@ -64,19 +64,6 @@ public sealed partial class MainWindow : Window
     private void UpdateInfoBar()
     {
         UpdateMemoryUsage();
-        GetLogBufferSize();
-    }
-
-    private void GetLogBufferSize()
-    {
-        try
-        {
-            LogBufferSize.Text = _logStorageService.GetLogBufferSize();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Failed to get log buffer size: {e}");
-        }
     }
 
     private void UpdateMemoryUsage()

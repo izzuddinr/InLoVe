@@ -104,11 +104,14 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<AdditionalFiles Include="ISO8583FILTER.json">
+		<AdditionalFiles Include="colors.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</AdditionalFiles>
+		<AdditionalFiles Include="iso8583filter.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</AdditionalFiles>
 		<None Remove="CAPK.json" />
-		<AdditionalFiles Include="CAPK.json">
+		<AdditionalFiles Include="capk.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</AdditionalFiles>
 	</ItemGroup>

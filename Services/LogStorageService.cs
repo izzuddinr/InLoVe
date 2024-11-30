@@ -47,21 +47,6 @@ public class LogStorageService
         return Task.CompletedTask;
     }
 
-    public string GetLogBufferSize()
-    {
-        var logBufferCount = $"Log Entries: {_logEntries.Count}";
-        var logBufferSize = "0 Bytes";
-        try
-        {
-            logBufferSize =$"Approx. Size: {GetReadableSize(_logEntries.Values.Sum(entry => entry.GetSize()))}";
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-        return $"{logBufferCount} ({logBufferSize})";
-    }
-
     public Tuple<double, string> GetCurrentMemoryUsage()
     {
         var currentMemoryUsage = GetReadableSize(Process.GetCurrentProcess().WorkingSet64);

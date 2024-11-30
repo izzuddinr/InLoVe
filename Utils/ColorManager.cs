@@ -1,46 +1,127 @@
 using System;
 using System.Collections.Generic;
-using Windows.UI;
-using Microsoft.UI.Xaml;
+using System.IO;
 using Microsoft.UI.Xaml.Media;
+using Newtonsoft.Json;
+using Color = Windows.UI.Color;
 
 namespace Qatalyst.Utils;
 
 public static class ColorManager
 {
-    private static readonly Dictionary<string, SolidColorBrush> ColorCache = new();
+    private static readonly Dictionary<string, string> ColorCache = new();
 
     static ColorManager()
     {
-        var resourceDictionary = new ResourceDictionary();
-        resourceDictionary.Source = new Uri("ms-appx:///Resources/Colors.xaml");
+        LoadColorsFromJson("colors.json");
+    }
 
-        foreach (var key in resourceDictionary.Keys)
+    public static SolidColorBrush GetBrush(string nameOrHexColor)
+    {
+        try
         {
-            if (resourceDictionary[key] is SolidColorBrush brush)
+            // Check if the name exists in the ColorCache
+            if (ColorCache.TryGetValue(nameOrHexColor, out var hexColor))
             {
-                ColorCache[key.ToString() ?? string.Empty] = brush;
+                return CreateBrushFromHexCode(hexColor);
+            }
+
+            // If not found, assume it's a hex code and create the brush dynamically
+            return CreateBrushFromHexCode(nameOrHexColor);
+        }
+        catch (Exception e)
+        {
+            throw new ArgumentException($"Could not create SolidColorBrush for '{nameOrHexColor}'.", e);
+        }
+    }
+
+    public static Color GetColor(string nameOrHexColor)
+    {
+        try
+        {
+            // Check if the name exists in the ColorCache
+            if (ColorCache.TryGetValue(nameOrHexColor, out var hexColor))
+            {
+                return CreateColorFromHexCode(hexColor);
+            }
+
+            // If not found, assume it's a hex code and create the color dynamically
+            return CreateColorFromHexCode(nameOrHexColor);
+        }
+        catch (Exception e)
+        {
+            throw new ArgumentException($"Could not create color for '{nameOrHexColor}'.", e);
+        }
+    }
+
+    private static SolidColorBrush CreateBrushFromHexCode(string hexColor)
+    {
+        var color = CreateColorFromHexCode(hexColor);
+        return new SolidColorBrush(color);
+    }
+
+    private static Color CreateColorFromHexCode(string hexColor)
+    {
+        if (string.IsNullOrWhiteSpace(hexColor))
+        {
+            throw new ArgumentException("Hex color code cannot be null or empty.", nameof(hexColor));
+        }
+
+        if (!hexColor.StartsWith("#"))
+        {
+            hexColor = "#" + hexColor;
+        }
+
+        if (hexColor.Length != 7 && hexColor.Length != 9)
+        {
+            throw new ArgumentException($"Invalid hex color code length: {hexColor}. Expected #RRGGBB or #AARRGGBB format.");
+        }
+
+        // Parse ARGB values
+        byte a = 255; // Default alpha value (opaque)
+        int startIndex = 1;
+
+        if (hexColor.Length == 9) // #AARRGGBB format
+        {
+            a = Convert.ToByte(hexColor.Substring(startIndex, 2), 16);
+            startIndex += 2;
+        }
+
+        byte r = Convert.ToByte(hexColor.Substring(startIndex, 2), 16);
+        byte g = Convert.ToByte(hexColor.Substring(startIndex + 2, 2), 16);
+        byte b = Convert.ToByte(hexColor.Substring(startIndex + 4, 2), 16);
+
+        return Color.FromArgb(a, r, g, b);
+    }
+
+    private static void LoadColorsFromJson(string jsonFilePath)
+    {
+        if (!File.Exists(jsonFilePath))
+        {
+            throw new FileNotFoundException($"JSON file not found: {jsonFilePath}");
+        }
+
+        var jsonContent = File.ReadAllText(jsonFilePath);
+
+        try
+        {
+            // Deserialize JSON into dictionary
+            var colorDefinitions = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
+
+            if (colorDefinitions == null)
+            {
+                throw new InvalidOperationException("Invalid JSON format.");
+            }
+
+            // Populate ColorCache with hex codes
+            foreach (var kvp in colorDefinitions)
+            {
+                ColorCache[kvp.Key] = kvp.Value;
             }
         }
-    }
-
-    public static SolidColorBrush GetBrush(string key)
-    {
-        if (ColorCache.TryGetValue(key, out var color))
+        catch (JsonException ex)
         {
-            return color;
+            throw new InvalidOperationException("Failed to load colors from JSON.", ex);
         }
-
-        throw new ArgumentException($"Color with key '{key}' not found in ResourceDictionary.");
-    }
-
-    public static Color GetColor(string key)
-    {
-        if (ColorCache.TryGetValue(key, out var color))
-        {
-            return color.Color;
-        }
-
-        throw new ArgumentException($"Color with key '{key}' not found in ResourceDictionary.");
     }
 }

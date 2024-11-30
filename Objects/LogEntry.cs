@@ -1,7 +1,5 @@
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
-using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using Qatalyst.Utils;
 
@@ -18,48 +16,8 @@ public class LogEntry
     public string? Tag { get; set; }
     public string? Message { get; set; }
     public string? PackageName { get; set; }
-
-    // Should not be saved to DB
-
-    [NotMapped]
-    public SolidColorBrush Color { get; private set; }
-
-    [NotMapped]
-    public bool IsValid { get; private set; }
-
-    public static LogEntry? CreateFromLogLine(string logLine)
-    {
-        var entry = new LogEntry();
-        entry.IsValid = entry.ParseLogLine(logLine);
-
-        if (entry.IsValid)
-        {
-            entry.Color = GetColorForLogLevel(entry.Level);
-            return entry;
-        }
-
-        return null;
-    }
-
-    private bool ParseLogLine(string logLine)
-    {
-        var parts = logLine.Split([' '], 7, StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length < 7)
-        {
-            return false;
-        }
-
-        Date = parts[0];
-        Time = parts[1];
-        ProcessId = parts[2];
-        ThreadId = parts[3];
-        Level = parts[4];
-        Tag = parts[5].TrimEnd(':');
-        Message = parts[6];
-        return true;
-    }
-
+    public SolidColorBrush Color { get; set; }
+    public bool IsValid { get; set; }
     public string FormattedEntry =>
         $"{Date} " +
         $"{Time} " +
@@ -74,40 +32,13 @@ public class LogEntry
         return $"{truncatedPackageName} ({ProcessId})";
     }
 
-    public int GetSize()
-    {
-        return sizeof(int) * 2
-               + Encoding.UTF8.GetByteCount(Date)
-               + Encoding.UTF8.GetByteCount(Time)
-               + Encoding.UTF8.GetByteCount(ProcessId)
-               + Encoding.UTF8.GetByteCount(ThreadId)
-               + Encoding.UTF8.GetByteCount(Level)
-               + Encoding.UTF8.GetByteCount(Tag)
-               + Encoding.UTF8.GetByteCount(PackageName)
-               + Encoding.UTF8.GetByteCount(Message);
-    }
-
     private static string GetTrimmedOrPadded(string value, int length)
     {
         if (string.IsNullOrEmpty(value))
             return "".PadRight(length);
 
         return value.Length > length
-            ? value.Substring(value.Length - length)
+            ? value[^length..]
             : value.PadRight(length);
-    }
-
-    private static SolidColorBrush GetColorForLogLevel(string level)
-    {
-        return level switch
-        {
-            "V" => ColorManager.GetBrush(AppColor.VerboseColor.ToString()),
-            "D" => ColorManager.GetBrush(AppColor.DebugColor.ToString()),
-            "I" => ColorManager.GetBrush(AppColor.InfoColor.ToString()),
-            "W" => ColorManager.GetBrush(AppColor.WarningColor.ToString()),
-            "E" => ColorManager.GetBrush(AppColor.ErrorColor.ToString()),
-            "F" => ColorManager.GetBrush(AppColor.FatalColor.ToString()),
-            _ => new SolidColorBrush(Colors.Black),
-        };
     }
 }

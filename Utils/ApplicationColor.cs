@@ -1,6 +1,6 @@
 namespace Qatalyst.Utils;
 
-public enum AppColor
+public enum ApplicationColor
 {
     StartColor,
     StopColor,

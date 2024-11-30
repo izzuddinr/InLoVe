@@ -1,0 +1,11 @@
+{
+	"StartColor": "#4E8752",
+	"StopColor": "#B54747",
+	"VerboseColor": "#FCFCFC",
+	"DebugColor": "#BDDEE7",
+	"InfoColor": "#DEE6C2",
+	"WarningColor": "#FFE15C",
+	"ErrorColor": "#FF5C7A",
+	"FatalColor": "#B8002B",
+	"AppBackgroundColor": "#201E23"
+}

@@ -15,7 +15,7 @@ public sealed partial class SettingsPage : Page
     public SettingsPage()
     {
         InitializeComponent();
-        MainGrid.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
+        MainGrid.Background = ColorManager.GetBrush(ApplicationColor.AppBackgroundColor.ToString());
         _images =
         [
             ImageViewer0,

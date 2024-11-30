@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Qatalyst.Objects;
 
@@ -8,28 +9,33 @@ namespace Qatalyst.Services
 {
     public class ConfigService
     {
-        public Dictionary<string, string> CapkDictionary { get; private set; }
-        public Dictionary<string, string> QDictionary { get; private set; }
+        public List<CapkLabel> CapkLabels { get; private set; }
+        public List<RandomQ> RandomQs { get; private set; }
+
+        public List<AppColor> AppColors { get; private set; }
+
         public ISO8583Filter Iso8583Filter { get; private set; }
 
         public ConfigService()
         {
-            CapkDictionary = LoadCapkDictionary("CAPK.json");
+            CapkLabels = LoadCapkDictionary("CAPK.json");
             Iso8583Filter = LoadIso8583Filter("ISO8583FILTER.json");
-            QDictionary = LoadQDictionary("RANDOMQ.json");
+            RandomQs = LoadQDictionary("RANDOMQ.json");
         }
 
-        private static Dictionary<string, string> LoadCapkDictionary(string fileName)
+        private static List<CapkLabel> LoadCapkDictionary(string fileName)
         {
             try
             {
                 var jsonString = LoadJsonFileToString(fileName);
-                return JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString) ?? new Dictionary<string, string>();
+                var parsedJson = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString) ?? [];
+
+                return parsedJson.Select(kvp => new CapkLabel(kvp.Key, kvp.Value)).ToList();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading CAPK dictionary from {fileName}: {ex.Message}");
-                return new Dictionary<string, string>();
+                return new List<CapkLabel>();
             }
         }
 
@@ -47,26 +53,30 @@ namespace Qatalyst.Services
             }
         }
 
-        private static Dictionary<string, string> LoadQDictionary(string fileName)
+        private static List<RandomQ> LoadQDictionary(string fileName)
         {
             try
             {
                 var jsonString = LoadJsonFileToString(fileName);
-                var quotes = JsonConvert.DeserializeObject<List<RandomQ>>(jsonString) ?? new List<RandomQ>();
-
-                var dictionary = new Dictionary<string, string>();
-                foreach (var quote in quotes)
-                {
-                    // Use the quote text as the key and the author as the value
-                    dictionary[quote.Text] = quote.From;
-                }
-
-                return dictionary;
+                return JsonConvert.DeserializeObject<List<RandomQ>>(jsonString) ?? new List<RandomQ>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading Q dictionary from {fileName}: {ex.Message}");
-                return new Dictionary<string, string>();
+                return new List<RandomQ>();
+            }
+        }
+        private static List<AppColor> LoadAppColors(string fileName)
+        {
+            try
+            {
+                var jsonString = LoadJsonFileToString(fileName);
+                return JsonConvert.DeserializeObject<List<AppColor>>(jsonString) ?? [];
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading Q dictionary from {fileName}: {ex.Message}");
+                return new List<AppColor>();
             }
         }
 

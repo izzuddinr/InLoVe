@@ -37,18 +37,18 @@ public partial class HostRecordPage
     public HostRecordPage()
     {
         InitializeComponent();
-        HostRecordScrollViewer.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
-        OpenHostRecordFileButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
-        FindRecordButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
-        ClearFilterRecordButton.Background = ColorManager.GetBrush(AppColor.StopColor.ToString());
+        HostRecordScrollViewer.Background = ColorManager.GetBrush("AppBackgroundColor");
+        OpenHostRecordFileButton.Background = ColorManager.GetBrush("StartColor");
+        FindRecordButton.Background = ColorManager.GetBrush("StartColor");
+        ClearFilterRecordButton.Background = ColorManager.GetBrush("StopColor");
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _configService = App.Services.GetService<ConfigService>();
         _pubSubService = App.Services.GetService<PubSubService>();
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
 
-        _normalColorBrush = ColorManager.GetBrush(AppColor.VerboseColor.ToString());
-        _filteredColorBrush = ColorManager.GetBrush(AppColor.StopColor.ToString());
+        _normalColorBrush = ColorManager.GetBrush("VerboseColor");
+        _filteredColorBrush = ColorManager.GetBrush("StopColor");
 
         InitTreeView();
 
@@ -323,9 +323,9 @@ public partial class HostRecordPage
             !capkObject.TryGetValue(ridIndex, out var indexValue) ||
             !capkObject.TryGetValue(exponent, out var exponentValue)) return null;
 
-        return _configService.CapkDictionary.TryGetValue($"{ridValue}{indexValue}{exponentValue}", out var capkLabel)
-            ? $"{capkLabel} ({ridValue}, {indexValue}, {exponentValue})"
-            : $"OTHERS ({ridValue}, {indexValue}, {exponentValue})";
+        var inputKey = $"{ridValue}{indexValue}{exponentValue}";
+
+        return _configService.CapkLabels.FirstOrDefault(cl => cl.Key == inputKey).Label;
     }
 
     private string? getCardConfigsValue(JToken arrayItem, string binRangeLow, string binRangeHigh, string cardScheme)

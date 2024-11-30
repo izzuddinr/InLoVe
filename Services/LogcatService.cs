@@ -46,7 +46,7 @@ public class LogcatService
                 using var reader = _logcatProcess.StandardOutput;
                 while (await reader.ReadLineAsync() is { } line)
                 {
-                    var logEntry = LogEntry.CreateFromLogLine(line);
+                    var logEntry = line.CreateFromLogLine();
 
                     if (logEntry is not { IsValid: true }) continue;
 

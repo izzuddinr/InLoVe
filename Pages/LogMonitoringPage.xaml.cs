@@ -42,7 +42,7 @@ public sealed partial class LogMonitoringPage
     {
         InitializeComponent();
         DataContext = this;
-        LogListView.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
+        LogListView.Background = ColorManager.GetBrush("AppBackgroundColor");
 
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
@@ -55,7 +55,7 @@ public sealed partial class LogMonitoringPage
         LoadDevices();
         LoadPackages();
 
-        StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
+        StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
         StartStopToggleButton.IsEnabled = DeviceComboBox.SelectedIndex != -1;
 
         LogEntriesDisplay.CollectionChanged += LogEntriesDisplayCollectionChanged;
@@ -97,6 +97,7 @@ public sealed partial class LogMonitoringPage
         {
             if (logEntry == null) return;
 
+            logEntry.GetColorForLogLevel();
             LogEntriesDisplay.Add(logEntry);
             ScrollToLatestItem();
         });
@@ -203,7 +204,7 @@ public sealed partial class LogMonitoringPage
         if (DeviceComboBox.SelectedIndex < 0) return;
         StartStopIcon.Glyph = "\uE71A";
         StartStopText.Text = "Stop";
-        StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StopColor.ToString());
+        StartStopToggleButton.Background = ColorManager.GetBrush("StopColor");
         DeviceComboBox.IsEnabled = false;
         StartLogcat();
     }
@@ -212,7 +213,7 @@ public sealed partial class LogMonitoringPage
     {
         StartStopIcon.Glyph = "\uE768";
         StartStopText.Text = "Start";
-        StartStopToggleButton.Background = ColorManager.GetBrush(AppColor.StartColor.ToString());
+        StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
         DeviceComboBox.IsEnabled = true;
         StopLogcat();
     }

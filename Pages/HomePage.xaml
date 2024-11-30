@@ -34,6 +34,7 @@
                    Margin="20, 20, 20, 5"
                    Text=" "
                    TextWrapping="WrapWholeWords"
+                   TextAlignment="Center"
                    HorizontalAlignment="Center"
                    Grid.Row="2" />
 

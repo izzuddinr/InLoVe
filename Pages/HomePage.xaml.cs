@@ -20,9 +20,9 @@ public sealed partial class HomePage : Page
     public HomePage()
     {
         InitializeComponent();
-        HomePageGrid.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
-        TextQ.Foreground = ColorManager.GetBrush(AppColor.VerboseColor.ToString());
-        AuthorQ.Foreground = ColorManager.GetBrush(AppColor.InfoColor.ToString());
+        HomePageGrid.Background = ColorManager.GetBrush(ApplicationColor.AppBackgroundColor.ToString());
+        TextQ.Foreground = ColorManager.GetBrush(ApplicationColor.VerboseColor.ToString());
+        AuthorQ.Foreground = ColorManager.GetBrush(ApplicationColor.InfoColor.ToString());
         _configService = App.Services.GetService<ConfigService>();
 
         // Initialize the DispatcherQueueTimer
@@ -44,16 +44,16 @@ public sealed partial class HomePage : Page
 
     private void GetRandomQuote()
     {
-        var QDictionary = _configService.QDictionary;
+        var QDictionary = _configService.RandomQs;
         if (QDictionary == null || QDictionary.Count == 0) return;
 
         var random = new Random();
         var index = random.Next(0, QDictionary.Count);
-        var randomKey = QDictionary.Keys.ElementAt(index);
+        var randomQ = QDictionary[index];
 
-        TextQ.Text = $"\"{randomKey}\"";
+        TextQ.Text = $"\"{randomQ.Text}\"";
         TextQ.FontStyle = FontStyle.Italic;
-        AuthorQ.Text = $"— {QDictionary[randomKey]} —";
+        AuthorQ.Text = $"— {randomQ.From} —";
     }
 
     private void InitializeQuoteTimer()

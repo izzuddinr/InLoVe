@@ -40,10 +40,10 @@ public partial class Iso8583ParsingPage
     public Iso8583ParsingPage()
     {
         InitializeComponent();
-        IsoMsgScrollViewer.Background = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
-        ReceiptScrollViewer.Background = ColorManager.GetBrush(AppColor.VerboseColor.ToString());
-        ExportIsoMsgLogButton.Background = ColorManager.GetBrush(AppColor.StopColor.ToString());
-        receiptTextColor = ColorManager.GetBrush(AppColor.AppBackgroundColor.ToString());
+        IsoMsgScrollViewer.Background = ColorManager.GetBrush("AppBackgroundColor");
+        ReceiptScrollViewer.Background = ColorManager.GetBrush("VerboseColor");
+        ExportIsoMsgLogButton.Background = ColorManager.GetBrush("StopColor");
+        receiptTextColor = ColorManager.GetBrush("AppBackgroundColor");
 
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
@@ -278,8 +278,8 @@ public partial class Iso8583ParsingPage
         };
 
         var color = isoMsg.IsRequestMsg()
-            ? ColorManager.GetBrush(AppColor.InfoColor.ToString())
-            : ColorManager.GetBrush(AppColor.WarningColor.ToString());
+            ? ColorManager.GetBrush("InfoColor")
+            : ColorManager.GetBrush("WarningColor");
 
         // Create the root node using the MTI
         var rootNode = new TreeViewNode
