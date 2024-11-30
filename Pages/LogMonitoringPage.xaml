@@ -149,12 +149,16 @@
                 HorizontalAlignment="Left"
                 IsTextSelectionEnabled="True"
                 Margin="5,0,5,0" />
-            <Button Grid.Column="1"  x:Name="PrevResultButton"
+            <Button Grid.Column="1"
+                    x:Name="PrevResultButton"
+                    IsEnabled="False"
                     VerticalAlignment="Stretch"
                     Click="OnPreviousButtonClick">
                 <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70E;" />
             </Button>
-            <Button Grid.Column="2"  x:Name="NextResultButton"
+            <Button Grid.Column="2"
+                    x:Name="NextResultButton"
+                    IsEnabled="False"
                     Margin="5, 0,0,0"
                     Click="OnNextButtonClick"
                     VerticalAlignment="Stretch">
@@ -167,7 +171,8 @@
                             Margin="5, 0,0,0"
                             PlaceholderText="Search Logcat"
                             QueryIcon="Find"
-                            QuerySubmitted="LogSearchBox_OnQuerySubmitted"/>
+                            QuerySubmitted="LogSearchBox_OnQuerySubmitted"
+                            TextChanged="LogSearchBox_OnTextChanged"/>
         </Grid>
     </Grid>
 </Page>

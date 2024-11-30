@@ -334,6 +334,54 @@ public sealed partial class LogMonitoringPage
             HandleSearchResultNavigation();
             return;
         }
+        HandleSearch(query);
+    }
+
+    private void LogSearchBox_OnTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        var query = LogSearchBox.Text.ToLower();
+        HandleSearch(query);
+    }
+
+    private void OnNextButtonClick(object sender, RoutedEventArgs _)
+    {
+        HandleSearchResultNavigation();
+    }
+
+    private void OnPreviousButtonClick(object sender, RoutedEventArgs _)
+    {
+        HandleSearchResultNavigation(false);
+    }
+
+    private void HandleSearchResultNavigation(bool isNext = true)
+    {
+        if (_searchResults.Count <= 0) return;
+
+        _currentResultIndex = isNext
+            ? (_currentResultIndex + 1) % _searchResults.Count
+            : _currentResultIndex = (_currentResultIndex - 1 + _searchResults.Count) % _searchResults.Count;
+
+        ScrollToResult(_searchResults[_currentResultIndex]);
+    }
+
+    private void ScrollToResult(int index)
+    {
+        LogListView.SelectedIndex = index;
+        LogListView.ScrollIntoView(LogListView.SelectedItem, ScrollIntoViewAlignment.Leading);
+    }
+
+    private void UpdateButtonStates()
+    {
+        var hasResults = _searchResults.Any();
+        PrevResultButton.IsEnabled = hasResults;
+        NextResultButton.IsEnabled = hasResults;
+        if (AutoScrollToggleButton.IsChecked == true && hasResults)
+            AutoScrollToggleButton.IsChecked = false;
+    }
+
+    private void HandleSearch(string query)
+    {
+        if (query.Length < 3) return;
 
         _searchResults.Clear();
         _currentResultIndex = -1;
@@ -359,40 +407,5 @@ public sealed partial class LogMonitoringPage
         _previousQuery = query;
 
         UpdateButtonStates();
-    }
-
-    private void OnNextButtonClick(object sender, RoutedEventArgs _)
-    {
-        HandleSearchResultNavigation();
-    }
-
-    private void OnPreviousButtonClick(object sender, RoutedEventArgs _)
-    {
-        HandleSearchResultNavigation(false);
-    }
-
-    private void HandleSearchResultNavigation(bool isNext = true)
-    {
-        if (_searchResults.Count <= 0) return;
-
-        _currentResultIndex = isNext
-            ? (_currentResultIndex + 1) % _searchResults.Count
-            : _currentResultIndex = (_currentResultIndex - 1 + _searchResults.Count) % _searchResults.Count;
-
-        ScrollToResult(_searchResults[_currentResultIndex]);
-
-    }
-
-    private void ScrollToResult(int index)
-    {
-        LogListView.SelectedIndex = index;
-        LogListView.ScrollIntoView(LogListView.SelectedItem, ScrollIntoViewAlignment.Leading);
-    }
-
-    private void UpdateButtonStates()
-    {
-        var hasResults = _searchResults.Any();
-        PrevResultButton.IsEnabled = hasResults;
-        NextResultButton.IsEnabled = hasResults;
     }
 }
