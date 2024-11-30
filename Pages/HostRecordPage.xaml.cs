@@ -10,7 +10,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json.Linq;
 using WinRT.Interop;
-using Newtonsoft.Json;
 using Qatalyst.Controls;
 using Qatalyst.Objects;
 using Qatalyst.Services;
@@ -20,7 +19,6 @@ namespace Qatalyst.Pages;
 
 public partial class HostRecordPage
 {
-    private readonly PubSubService? _pubSubService;
     private readonly ConfigService? _configService;
 
     private readonly DispatcherQueue _dispatcherQueue;
@@ -44,8 +42,8 @@ public partial class HostRecordPage
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _configService = App.Services.GetService<ConfigService>();
-        _pubSubService = App.Services.GetService<PubSubService>();
-        _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+        var pubSubService = App.Services.GetService<PubSubService>();
+        pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
 
         _normalColorBrush = ColorManager.GetBrush("VerboseColor");
         _filteredColorBrush = ColorManager.GetBrush("StopColor");
@@ -88,7 +86,7 @@ public partial class HostRecordPage
 
             var file = await openPicker.PickSingleFileAsync();
             var fileContents = await File.ReadAllTextAsync(file.Path);
-            _currentActiveJson = HostRecordParser.ParseHostRecord(fileContents);
+            _currentActiveJson = HostRecordParser.ParseHostRecord(fileContents) ?? new JObject();
 
             AddMessageToTreeView(_currentActiveJson);
         }
@@ -96,11 +94,6 @@ public partial class HostRecordPage
         {
             Console.WriteLine("Error reading file: " + ex.Message);
         }
-    }
-
-    private async void SaveHostRecordFileAsXmlButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        return;
     }
 
     private void OnLogEntryReceived(object eventData)
@@ -116,7 +109,7 @@ public partial class HostRecordPage
         var message = logEntry.Message;
         var isValidPackageName = logEntry.PackageName != null && logEntry.PackageName.Contains("haas.paymark");
         var isValidTag = logEntry.Tag != null && logEntry.Tag.Contains("APP_CMD_PROXY");
-        var isHostRecordLogStart = message.Contains("capkDataList");
+        var isHostRecordLogStart = message != null && message.Contains("capkDataList");
 
         if (_isParsingMessage && !isValidPackageName && !isValidTag) FinalizeCurrentMessage();
 
@@ -132,16 +125,14 @@ public partial class HostRecordPage
             case false:
                 return;
             case true when isValidTag:
-                _currentMessageBuffer.Add(message);
+                if (message != null) _currentMessageBuffer.Add(message);
                 break;
         }
     }
 
     private void FinalizeCurrentMessage()
     {
-        _currentActiveJson = HostRecordParser.ParseHostRecord(_currentMessageBuffer);
-
-        if (_currentActiveJson == null) return;
+        _currentActiveJson = HostRecordParser.ParseHostRecord(_currentMessageBuffer) ?? new JObject();
 
         AddMessageToTreeView(_currentActiveJson);
         _currentMessageBuffer.Clear();
@@ -150,12 +141,15 @@ public partial class HostRecordPage
 
     private void AddMessageToTreeView(JObject hostRecordJson, bool isFilteredView = false)
     {
+        if (_unfilteredTreeView == null) return;
+
         _unfilteredTreeView.RootNodes.Clear();
         Console.WriteLine($"Cleared unfiltered treeview");
 
         foreach (var (key, value) in hostRecordJson)
         {
-            var recordTypeFilter = RecordTypeComboBox.SelectedItem?.ToString() switch {
+            var recordTypeFilter = RecordTypeComboBox.SelectedItem?.ToString() switch
+            {
                 "A Records" => HostRecordTag.A_RECORD,
                 "X Records" => HostRecordTag.X_RECORD,
                 "C Records" => HostRecordTag.C_RECORD,
@@ -186,7 +180,7 @@ public partial class HostRecordPage
                 }
             };
             //Console.WriteLine($"rootNode - tag: {(rootNode.Content as HostRecord)?.Tag} value: {(rootNode.Content as HostRecord)?.Value}" );
-            AddJsonElementToTreeView(rootNode, value, isFilteredView);
+            if (value != null) AddJsonElementToTreeView(rootNode, value, isFilteredView);
 
             if (tag != HostRecordTag.K_RECORD) continue;
             _unfilteredTreeView.RootNodes.Add(rootNode);
@@ -221,8 +215,7 @@ public partial class HostRecordPage
                             "cardConfigs" => HostRecordTag.C_RECORD,
                             _ => HostRecordTag.UNKNOWN
                         };
-
-                        var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter;
+                        var isTagMatchFilter = isFilteredView && tag == recordTypeFilter;
 
                         var childNode = new TreeViewNode
                         {
@@ -230,13 +223,12 @@ public partial class HostRecordPage
                             {
                                 Tag = tag.ToString(),
                                 Value = $"{tag.GetHostRecordContent()}",
-                                TextColor = isFilteredView && isTypeMatchFilter ? _filteredColorBrush : _normalColorBrush
+                                TextColor = isFilteredView && isTagMatchFilter ? _filteredColorBrush : _normalColorBrush
                             }
                         };
 
-                        //Console.WriteLine($"childNestedNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
                         AddJsonElementToTreeView(childNode, nestedValue, isFilteredView);
-                        _unfilteredTreeView.RootNodes.Add(childNode);
+                        if (_unfilteredTreeView != null) _unfilteredTreeView.RootNodes.Add(childNode);
                     }
                     else
                     {
@@ -244,9 +236,8 @@ public partial class HostRecordPage
                         var isTagMatchFilter = isFilteredView && key == recordTagFilter;
                         var isValueMatchFilter = isFilteredView &&
                                                  (RecordValueTextBox.Text.IsNullOrWhiteSpace() ||
-                                                 value.Contains(recordValueFilter ?? string.Empty));
-
-                        // Console.WriteLine($"childNode Filter - tag: {key} filter: {recordTagFilter}" );
+                                                 value.ToString().Contains(recordValueFilter.Trim()));
+                        
                         var childNode = new TreeViewNode
                         {
                             Content = new CustomTreeViewContent
@@ -256,8 +247,6 @@ public partial class HostRecordPage
                                 TextColor = isFilteredView && isTagMatchFilter && isValueMatchFilter ? _filteredColorBrush : _normalColorBrush
                             }
                         };
-
-                        // Console.WriteLine($"childNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
                         parentNode.Children.Add(childNode);
                     }
                 }
@@ -268,8 +257,25 @@ public partial class HostRecordPage
                 for (var i = 0; i < array.Count; i++)
                 {
                     var tag = (parentNode.Content as CustomTreeViewContent)?.Tag;
+
+                    if (tag == null) continue;
+
                     var content = ExtractValueFromArray(array[i], tag);
                     var isTypeMatchFilter = isFilteredView && tag == recordTypeFilter.ToString();
+
+                    var isValueMatchFilter = false;
+                    if (isFilteredView)
+                    {
+                        foreach (var element in (JObject)array[i])
+                        {
+                            if (element.Key != recordTagFilter) continue;
+                            var foundMatchingRecord = element.Value != null && element.Value.ToString().Contains(recordValueFilter.Trim());
+
+                            if (!foundMatchingRecord) continue;
+                            isValueMatchFilter = foundMatchingRecord;
+                            break;
+                        }
+                    }
 
                     var childNode = new TreeViewNode
                     {
@@ -277,11 +283,10 @@ public partial class HostRecordPage
                         {
                             Tag = tag,
                             Value = content ?? $"{i}",
-                            TextColor = isFilteredView && isTypeMatchFilter ? _filteredColorBrush : _normalColorBrush
+                            TextColor = isFilteredView && isTypeMatchFilter && isValueMatchFilter ? _filteredColorBrush : _normalColorBrush
                         }
                     };
 
-                    // Console.WriteLine($"childArrayNode - tag: {(childNode.Content as HostRecord)?.Tag} value: {(childNode.Content as HostRecord)?.Value}" );
                     AddJsonElementToTreeView(childNode, array[i], isFilteredView);
                     parentNode.Children.Add(childNode);
                 }
@@ -298,13 +303,13 @@ public partial class HostRecordPage
             return tagSwitch switch
             {
                 HostRecordTag.A_RECORD or HostRecordTag.X_RECORD =>
-                    getEmvRecordsValue(arrayItem, "aid", "recommendedAppName"),
+                    GetEmvRecordsValue(arrayItem, "aid", "recommendedAppName"),
 
                 HostRecordTag.C_RECORD =>
-                    getCardConfigsValue(arrayItem, "binRangeLow", "binRangeHigh", "cardScheme"),
+                    GetCardConfigsValue(arrayItem, "binRangeLow", "binRangeHigh", "cardScheme"),
 
                 HostRecordTag.K_RECORD =>
-                    getCapkValue(arrayItem, "rid", "ridIndex", "exponent"),
+                    GetCapkValue(arrayItem, "rid", "ridIndex", "exponent"),
 
                 _ => null
             };
@@ -316,19 +321,23 @@ public partial class HostRecordPage
         }
     }
 
-    private string? getCapkValue(JToken arrayItem, string rid, string ridIndex, string exponent)
+    private string FormatCapkLabel(string label, string inputKey) => $"{label} [{inputKey}]";
+
+    private string GetCapkValue(JToken arrayItem, string rid, string ridIndex, string exponent)
     {
         if (arrayItem is not JObject capkObject ||
             !capkObject.TryGetValue(rid, out var ridValue) ||
             !capkObject.TryGetValue(ridIndex, out var indexValue) ||
-            !capkObject.TryGetValue(exponent, out var exponentValue)) return null;
+            !capkObject.TryGetValue(exponent, out var exponentValue)) return string.Empty;
 
         var inputKey = $"{ridValue}{indexValue}{exponentValue}";
-
-        return _configService.CapkLabels.FirstOrDefault(cl => cl.Key == inputKey).Label;
+        var label = _configService != null
+                ? _configService.CapkLabels.FirstOrDefault(cl => cl.Key == inputKey)?.Label ?? "OTHERS"
+                : "OTHERS";
+        return FormatCapkLabel(label, $"{ridValue} {indexValue} {exponentValue}");
     }
 
-    private string? getCardConfigsValue(JToken arrayItem, string binRangeLow, string binRangeHigh, string cardScheme)
+    private string? GetCardConfigsValue(JToken arrayItem, string binRangeLow, string binRangeHigh, string cardScheme)
     {
         if (arrayItem is JObject binRangeObject &&
             binRangeObject.TryGetValue(binRangeLow, out var lowValue) &&
@@ -341,7 +350,7 @@ public partial class HostRecordPage
         return null;
     }
 
-    private string? getEmvRecordsValue(JToken arrayItem, string aid, string appName)
+    private string? GetEmvRecordsValue(JToken arrayItem, string aid, string appName)
     {
         if (arrayItem is JObject emvObject &&
             emvObject.TryGetValue(aid, out var aidValue) &&
@@ -350,12 +359,9 @@ public partial class HostRecordPage
         return null;
     }
 
-    public void Records_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void RecordTypeComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (RecordTypeComboBox.SelectedItem == null)
-        {
-            return;
-        }
+        if (RecordTypeComboBox.SelectedItem == null) return;
 
         RecordTagComboBox.ItemsSource = null;
         RecordTagComboBox.ItemsSource = RecordTypeComboBox.SelectedItem.ToString() switch
@@ -365,6 +371,47 @@ public partial class HostRecordPage
             "K Records" => HostRecordTag.K_RECORD.GetRecordTags(),
             _ => RecordTagComboBox.ItemsSource
         };
+    }
+
+    private void RecordValueTextBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+        RecordValueTextBoxGetAutoSuggestion(sender);
+    }
+
+    private void RecordValueTextBox_OnGotFocus(object sender, RoutedEventArgs e)
+    {
+        if(sender is not AutoSuggestBox autoSuggestBox) return;
+
+        RecordValueTextBoxGetAutoSuggestion(autoSuggestBox);
+    }
+
+    private void RecordValueTextBoxGetAutoSuggestion(AutoSuggestBox sender)
+    {
+        if (_configService == null || RecordTagComboBox.SelectedItem == null) return;
+
+        _configService.HostRecordTags.TryGetValue(
+            RecordTagComboBox.SelectedItem?.ToString() ?? "", out var suitableItems
+        );
+
+        var splitText = sender.Text.ToLower().Split(" ");
+        if (suitableItems == null) return;
+
+        foreach (var item in from item in suitableItems.ToList()
+                 let found = splitText.All(key => item.Contains(key, StringComparison.CurrentCultureIgnoreCase))
+                 where found
+                 select item)
+        {
+            if (suitableItems.Contains(item)) continue;
+            suitableItems.Add(item);
+        }
+
+        if (suitableItems.Count == 0)
+        {
+            suitableItems.Add("No results found");
+        }
+
+        sender.ItemsSource = suitableItems;
     }
 
     public void FindRecordButton_OnClick(object sender, RoutedEventArgs e)
@@ -406,4 +453,4 @@ public partial class HostRecordPage
         }
         Console.WriteLine("=================================================");
     }
- }
+}

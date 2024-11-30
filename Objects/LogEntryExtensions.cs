@@ -79,8 +79,6 @@ public static class LogEntryExtensions
                 "F" => ColorManager.GetBrush("FatalColor"),
                 _ => new SolidColorBrush(Microsoft.UI.Colors.Black),
             };
-
-            Console.WriteLine($"Brush Created for level {entry.Level}: {brush}");
             entry.Color = brush;
         }
         catch (Exception ex)

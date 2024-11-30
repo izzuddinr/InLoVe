@@ -206,6 +206,7 @@ public sealed partial class LogMonitoringPage
         StartStopText.Text = "Stop";
         StartStopToggleButton.Background = ColorManager.GetBrush("StopColor");
         DeviceComboBox.IsEnabled = false;
+        LoadDeviceButton.IsEnabled = false;
         StartLogcat();
     }
 
@@ -215,6 +216,7 @@ public sealed partial class LogMonitoringPage
         StartStopText.Text = "Start";
         StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
         DeviceComboBox.IsEnabled = true;
+        LoadDeviceButton.IsEnabled = true;
         StopLogcat();
     }
 

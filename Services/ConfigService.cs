@@ -12,15 +12,16 @@ namespace Qatalyst.Services
         public List<CapkLabel> CapkLabels { get; private set; }
         public List<RandomQ> RandomQs { get; private set; }
 
-        public List<AppColor> AppColors { get; private set; }
+        public Dictionary<string, List<string>> HostRecordTags { get; set; }
 
         public ISO8583Filter Iso8583Filter { get; private set; }
 
         public ConfigService()
         {
-            CapkLabels = LoadCapkDictionary("CAPK.json");
-            Iso8583Filter = LoadIso8583Filter("ISO8583FILTER.json");
+            CapkLabels = LoadCapkDictionary("capk.json");
+            Iso8583Filter = LoadIso8583Filter("iso8583filter.json");
             RandomQs = LoadQDictionary("RANDOMQ.json");
+            HostRecordTags = LoadHostRecordTags("tags.json");
         }
 
         private static List<CapkLabel> LoadCapkDictionary(string fileName)
@@ -29,13 +30,34 @@ namespace Qatalyst.Services
             {
                 var jsonString = LoadJsonFileToString(fileName);
                 var parsedJson = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString) ?? [];
+                var parsedCapkLabels = parsedJson.Select(kvp => new CapkLabel(kvp.Key, kvp.Value)).ToList();
+                foreach (var capkLabel in parsedCapkLabels)
+                {
+                    Console.WriteLine($"CapkLabel: {capkLabel.Key} | {capkLabel.Label}");
+                }
 
-                return parsedJson.Select(kvp => new CapkLabel(kvp.Key, kvp.Value)).ToList();
+                return parsedCapkLabels;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading CAPK dictionary from {fileName}: {ex.Message}");
                 return new List<CapkLabel>();
+            }
+        }
+
+        private static Dictionary<string, List<string>> LoadHostRecordTags(string fileName)
+        {
+            try
+            {
+                var jsonString = LoadJsonFileToString(fileName);
+                var parsedJson = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString) ?? [];
+
+                return parsedJson;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading Host Record Tags dictionary from {fileName}: {ex.Message}");
+                return new Dictionary<string, List<string>>();
             }
         }
 

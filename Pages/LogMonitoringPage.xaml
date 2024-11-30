@@ -70,6 +70,7 @@
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0"
+                    x:Name="LoadDeviceButton"
                     Margin="0, 5, 5, 0"
                     Click="RefreshDevice_Click">
                 <StackPanel Orientation="Horizontal">

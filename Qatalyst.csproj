@@ -99,7 +99,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<None Remove="Assets\QAtalyst.png" />
-		<None Update="RANDOMQ.json">
+		<None Update="randomq.json">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
@@ -113,6 +113,10 @@
 		<None Remove="CAPK.json" />
 		<AdditionalFiles Include="capk.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</AdditionalFiles>
+		<None Remove="tags.json" />
+		<AdditionalFiles Include="tags.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</AdditionalFiles>
 	</ItemGroup>
 

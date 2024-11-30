@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Microsoft.UI;
@@ -176,13 +177,19 @@ public static class HostRecordTagExtensions
             _ => HostRecordTag.UNKNOWN
         };
 
-    public static List<string> GetRecordTags(this HostRecordTag tag) =>
-        tag switch
+    public static List<string> GetRecordTags(this HostRecordTag tag) {
+        var recordTags = tag switch
         {
             HostRecordTag.A_RECORD or HostRecordTag.X_RECORD => emvRecordTags,
             HostRecordTag.C_RECORD => cRecordTags,
             HostRecordTag.K_RECORD => kRecordTags,
+            _ => []
         };
+
+        recordTags.Sort();
+
+        return recordTags;
+    }
 }
 
 public enum HostRecordTag
