@@ -24,6 +24,10 @@ public sealed partial class LogMonitoringPage
     private List<string> _availablePackages = [];
     private ContentDialog? _packageDialog;
 
+    private List<int> _searchResults = [];
+    private int _currentResultIndex = -1;
+    private string _previousQuery = string.Empty;
+
     public string SelectedDevice { get; set; } = string.Empty;
 
     private readonly DispatcherQueue _dispatcherQueue;
@@ -320,5 +324,75 @@ public sealed partial class LogMonitoringPage
         if (!DeviceComboBox.IsEnabled) return;
 
         LoadDevices();
+    }
+
+    private void LogSearchBox_OnQuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        var query = LogSearchBox.Text.ToLower();
+        if (query == _previousQuery)
+        {
+            HandleSearchResultNavigation();
+            return;
+        }
+
+        _searchResults.Clear();
+        _currentResultIndex = -1;
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            for (int index = 0; index < LogListView.Items.Count; index++)
+            {
+                if (LogListView.Items[index] is LogEntry logEntry &&
+                    logEntry.FormattedEntry.Contains(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    _searchResults.Add(index);
+                }
+            }
+
+            if (_searchResults.Any())
+            {
+                _currentResultIndex = 0;
+                ScrollToResult(_searchResults[_currentResultIndex]);
+            }
+        }
+
+        _previousQuery = query;
+
+        UpdateButtonStates();
+    }
+
+    private void OnNextButtonClick(object sender, RoutedEventArgs _)
+    {
+        HandleSearchResultNavigation();
+    }
+
+    private void OnPreviousButtonClick(object sender, RoutedEventArgs _)
+    {
+        HandleSearchResultNavigation(false);
+    }
+
+    private void HandleSearchResultNavigation(bool isNext = true)
+    {
+        if (_searchResults.Count <= 0) return;
+
+        _currentResultIndex = isNext
+            ? (_currentResultIndex + 1) % _searchResults.Count
+            : _currentResultIndex = (_currentResultIndex - 1 + _searchResults.Count) % _searchResults.Count;
+
+        ScrollToResult(_searchResults[_currentResultIndex]);
+
+    }
+
+    private void ScrollToResult(int index)
+    {
+        LogListView.SelectedIndex = index;
+        LogListView.ScrollIntoView(LogListView.SelectedItem, ScrollIntoViewAlignment.Leading);
+    }
+
+    private void UpdateButtonStates()
+    {
+        var hasResults = _searchResults.Any();
+        PrevResultButton.IsEnabled = hasResults;
+        NextResultButton.IsEnabled = hasResults;
     }
 }

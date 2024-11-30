@@ -124,19 +124,50 @@
             CanDrag="False"
             CanDragItems="False"
             CanReorderItems="False"
+            SelectionMode="Single"
             ItemTemplate="{StaticResource LogEntryTemplate}"
             ItemContainerStyle="{StaticResource CustomListViewItemStyle}"
             Margin="0, 10">
         </ListView>
 
-        <TextBlock
-            Grid.Row="3"
-            x:Name="LogEntriesDisplayCount"
-            FontFamily="Consolas"
-            FontSize="12"
-            Text="{x:Bind LogEntriesDisplay.Count}"
-            TextWrapping="Wrap"
-            IsTextSelectionEnabled="True"
-            Margin="5,0,5,0" />
+        <Grid Grid.Row="3" Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                x:Name="LogEntriesDisplayCount"
+                FontFamily="Consolas"
+                FontSize="12"
+                Text="{x:Bind LogEntriesDisplay.Count}"
+                TextWrapping="Wrap"
+                MinWidth="750"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                IsTextSelectionEnabled="True"
+                Margin="5,0,5,0" />
+            <Button Grid.Column="1"  x:Name="PrevResultButton"
+                    VerticalAlignment="Stretch"
+                    Click="OnPreviousButtonClick">
+                <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70E;" />
+            </Button>
+            <Button Grid.Column="2"  x:Name="NextResultButton"
+                    Margin="5, 0,0,0"
+                    Click="OnNextButtonClick"
+                    VerticalAlignment="Stretch">
+                <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70D;" />
+            </Button>
+            <AutoSuggestBox Grid.Column="3"  x:Name="LogSearchBox"
+                            FontFamily="Consolas"
+                            FontSize="12"
+                            HorizontalAlignment="Stretch"
+                            Margin="5, 0,0,0"
+                            PlaceholderText="Search Logcat"
+                            QueryIcon="Find"
+                            QuerySubmitted="LogSearchBox_OnQuerySubmitted"/>
+        </Grid>
     </Grid>
 </Page>

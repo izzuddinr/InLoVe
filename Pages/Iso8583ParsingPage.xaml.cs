@@ -163,7 +163,7 @@ public partial class Iso8583ParsingPage
         return messageType switch
         {
             "RECEIPT_MSG" => _isParsingMessage && isValidTag && message.Contains("END PRINTING"),
-            "ISO_MSG" => _isParsingMessage && isValidTag && !message.Contains('|'),
+            "ISO_MSG" => _isParsingMessage && ((isValidTag && !message.Contains('|')) || !isValidTag),
             _ => false
         };
     }
