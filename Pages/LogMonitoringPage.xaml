@@ -176,7 +176,7 @@
                     x:Name="TimespanTextBlock"
                     FontFamily="Consolas"
                     FontSize="16"
-                    Text="0 Day(s) - 00:00:00.0000"
+                    Text="00:00:00.0000"
                     TextWrapping="Wrap"
                     Width="480"
                     VerticalAlignment="Center"
