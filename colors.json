@@ -12,12 +12,12 @@
 	"ErrorColor": "#FF5C7A",
 	"FatalColor": "#B8002B",
 
-	"HVerboseColor": "#66A0A0A0",
-	"HDebugColor": "#669ACEE0",
-	"HInfoColor": "#66C3D3A2",
-	"HWarningColor": "#66FFD27F",
-	"HErrorColor": "#66FF8698",
-	"HFatalColor": "#66D42F4F",
+	"HVerboseColor": "#33A0A0A0",
+	"HDebugColor": "#339ACEE0",
+	"HInfoColor": "#33C3D3A2",
+	"HWarningColor": "#33FFD27F",
+	"HErrorColor": "#337F8698",
+	"HFatalColor": "#33D42F4F",
 
 	"AppBackgroundColor": "#201E23",
 

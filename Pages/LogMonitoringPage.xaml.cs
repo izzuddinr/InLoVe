@@ -136,6 +136,7 @@ public sealed partial class LogMonitoringPage
                 ClearLogs();
                 foreach (var entry in logEntries)
                 {
+                    entry.GetColorForLogLevel();
                     LogEntriesDisplay.Add(entry);
                 }
             });
