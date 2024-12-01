@@ -1,11 +1,10 @@
-using System;
-using System.Text;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
-using Qatalyst.Utils;
 
 namespace Qatalyst.Objects;
 
-public class LogEntry
+public partial class LogEntry : INotifyPropertyChanged
 {
     public int Id { get; set; }
     public string? Date { get; set; }
@@ -16,8 +15,26 @@ public class LogEntry
     public string? Tag { get; set; }
     public string? Message { get; set; }
     public string? PackageName { get; set; }
-    public SolidColorBrush Color { get; set; }
+    public SolidColorBrush TextBrush { get; set; }
+    public bool IsChecked { get; set; } = false;
     public bool IsValid { get; set; }
+
+
+    private SolidColorBrush _backgroundBrush;
+
+    public SolidColorBrush BackgroundBrush
+    {
+        get => _backgroundBrush;
+        set
+        {
+            if (_backgroundBrush != value)
+            {
+                _backgroundBrush = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string FormattedEntry =>
         $"{Date} " +
         $"{Time} " +
@@ -40,5 +57,12 @@ public class LogEntry
         return value.Length > length
             ? value[^length..]
             : value.PadRight(length);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

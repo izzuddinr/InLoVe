@@ -1,6 +1,3 @@
-using Microsoft.UI;
-using Microsoft.UI.Xaml.Media;
-
 namespace Qatalyst.Objects;
 
 public class AppColor

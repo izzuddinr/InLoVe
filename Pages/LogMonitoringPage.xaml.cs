@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -435,11 +436,7 @@ public sealed partial class LogMonitoringPage
 
             if (!matches) continue;
 
-            if (LogListView.ContainerFromIndex(index) is ListViewItem listViewItem)
-            {
-                listViewItem.Background = GetHighlightColor(logEntry);
-            }
-
+            logEntry.BackgroundBrush = GetHighlightColor(logEntry);
             _searchResults.Add(index);
         }
 
@@ -457,15 +454,17 @@ public sealed partial class LogMonitoringPage
 
     private void ClearSearchResults()
     {
-        foreach (var index in _searchResults)
+        var searchResults = _searchResults
+            .Where(i => i >= 0 && i < LogEntriesDisplay.Count)
+            .Select(i =>  LogEntriesDisplay[i]);
+        foreach (var logEntry in searchResults)
         {
-            if (LogListView.ContainerFromIndex(index) is ListViewItem listViewItem)
-            {
-                listViewItem.Background = ColorManager.GetBrush("DefaultHighlightColor");
-            }
+            logEntry.BackgroundBrush = new SolidColorBrush(Colors.Transparent);
         }
+
         _searchResults.Clear();
     }
+
 
     private SolidColorBrush GetHighlightColor(LogEntry logEntry)
     {
@@ -477,7 +476,7 @@ public sealed partial class LogMonitoringPage
             "W" => ColorManager.GetBrush("HWarningColor"),
             "E" => ColorManager.GetBrush("HErrorColor"),
             "F" => ColorManager.GetBrush("HFatalColor"),
-            _ => ColorManager.GetBrush("DefaultHighlightColor"),
+            _ => new SolidColorBrush(Colors.Transparent),
         };
 
         return brush;

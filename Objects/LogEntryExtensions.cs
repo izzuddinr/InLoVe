@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using Qatalyst.Utils;
 
@@ -77,9 +78,10 @@ public static class LogEntryExtensions
                 "W" => ColorManager.GetBrush("WarningColor"),
                 "E" => ColorManager.GetBrush("ErrorColor"),
                 "F" => ColorManager.GetBrush("FatalColor"),
-                _ => new SolidColorBrush(Microsoft.UI.Colors.Black),
+                _ => new SolidColorBrush(Colors.Black),
             };
-            entry.Color = brush;
+            entry.TextBrush = brush;
+            entry.BackgroundBrush = new SolidColorBrush(Colors.Transparent);
         }
         catch (Exception ex)
         {

@@ -16,7 +16,7 @@
                 </Grid.ColumnDefinitions>
                 <ToggleButton Grid.Column="0"
                               x:Name="TimespanButton"
-                              DataContext="{Binding}"
+                              IsChecked="{Binding IsChecked, Mode=TwoWay}"
                               MinHeight="1"
                               MinWidth="1"
                               Padding="3"
@@ -25,20 +25,22 @@
                               VerticalAlignment="Top">
                     <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="12" Glyph="&#xE916;" />
                 </ToggleButton>
-                <TextBlock
-                    Grid.Column="1" x:Name="LogEntryText"
+                <Border Grid.Column="1" Background="{Binding BackgroundBrush}" CornerRadius="2" Padding="1">
+                <TextBlock x:Name="LogEntryText"
                     FontFamily="Consolas"
                     FontSize="13"
                     Text="{x:Bind FormattedEntry}"
-                    Foreground="{x:Bind Color}"
+                    Foreground="{x:Bind TextBrush}"
                     TextWrapping="Wrap"
                     IsTextSelectionEnabled="True"
                     Margin="5,0,15,0" />
+                </Border>
             </Grid>
         </DataTemplate>
 
         <!-- Compact ListViewItem Style -->
         <Style TargetType="ListViewItem" x:Key="CustomListViewItemStyle">
+            <Setter Property="Background" Value="{Binding BackgroundBrush}" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="MinHeight" Value="0" />

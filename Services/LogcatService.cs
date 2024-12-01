@@ -61,6 +61,7 @@ public class LogcatService
             catch (Exception ex)
             {
                 Console.WriteLine($"Error while reading logcat output: {ex.Message}");
+                Console.WriteLine($"Trace: {ex.StackTrace}");
             }
         });
     }

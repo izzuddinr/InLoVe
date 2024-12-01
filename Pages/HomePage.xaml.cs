@@ -1,7 +1,4 @@
 using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.UI.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
