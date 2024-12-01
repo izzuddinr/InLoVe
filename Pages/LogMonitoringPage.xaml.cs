@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using Qatalyst.Objects;
 using Qatalyst.Services;
 using Qatalyst.Utils;
@@ -28,6 +30,9 @@ public sealed partial class LogMonitoringPage
     private int _currentResultIndex = -1;
     private string _previousQuery = string.Empty;
 
+    private List<int> _timespanIndices = [];
+    private List<DateTime> _timespanData = [];
+
     public string SelectedDevice { get; set; } = string.Empty;
 
     private readonly DispatcherQueue _dispatcherQueue;
@@ -48,6 +53,7 @@ public sealed partial class LogMonitoringPage
         DataContext = this;
         LogListView.Background = ColorManager.GetBrush("AppBackgroundColor");
 
+
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _logcatService = App.Services.GetService<LogcatService>();
@@ -61,6 +67,7 @@ public sealed partial class LogMonitoringPage
 
         StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
         StartStopToggleButton.IsEnabled = DeviceComboBox.SelectedIndex != -1;
+        ClearTimespanButton.Background = ColorManager.GetBrush("StopColor");
 
         LogEntriesDisplay.CollectionChanged += LogEntriesDisplayCollectionChanged;
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
@@ -81,7 +88,6 @@ public sealed partial class LogMonitoringPage
             _dispatcherQueue.TryEnqueue(() =>
             {
                 LogListView.Items.Add(newEntry);
-                LogEntriesDisplayCount.Text = $"{LogListView.Items.Count} entries";
             });
         }
 
@@ -340,6 +346,11 @@ public sealed partial class LogMonitoringPage
     private void LogSearchBox_OnTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         var query = LogSearchBox.Text.ToLower();
+        if (LogSearchBox.Text.Length <= 0)
+        {
+            ClearSearchResults();
+            return;
+        };
         HandleSearch(query);
     }
 
@@ -381,31 +392,167 @@ public sealed partial class LogMonitoringPage
 
     private void HandleSearch(string query)
     {
-        if (query.Length < 3) return;
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 3) return;
 
-        _searchResults.Clear();
+        ClearSearchResults();
         _currentResultIndex = -1;
 
-        if (!string.IsNullOrEmpty(query))
+        var isQuoted = (query.StartsWith("'") && query.EndsWith("'")) ||
+                       (query.StartsWith("\"") && query.EndsWith("\""));
+        if (isQuoted)
         {
-            for (int index = 0; index < LogListView.Items.Count; index++)
+            query = query.Substring(1, query.Length - 2);
+        }
+
+        var andQueries = query.Split(["&&"], StringSplitOptions.None);
+        var orQueries = query.Split(["||"], StringSplitOptions.None);
+
+        var isAndSearch = andQueries.Length > 1;
+        var isOrSearch = orQueries.Length > 1;
+
+        var searchQueries = isAndSearch ? andQueries : orQueries;
+
+        for (var index = 0; index < LogListView.Items.Count; index++)
+        {
+            if (LogListView.Items[index] is not LogEntry logEntry) continue;
+
+            var matches = false;
+
+            if (isAndSearch)
             {
-                if (LogListView.Items[index] is LogEntry logEntry &&
-                    logEntry.FormattedEntry.Contains(query, StringComparison.OrdinalIgnoreCase))
-                {
-                    _searchResults.Add(index);
-                }
+                matches = searchQueries.All(queryWord =>
+                    logEntry.FormattedEntry.Contains(queryWord.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            else if (isOrSearch)
+            {
+                matches = searchQueries.Any(queryWord =>
+                    logEntry.FormattedEntry.Contains(queryWord.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                matches = logEntry.FormattedEntry.Contains(query, StringComparison.OrdinalIgnoreCase);
             }
 
-            if (_searchResults.Any())
+            if (!matches) continue;
+
+            if (LogListView.ContainerFromIndex(index) is ListViewItem listViewItem)
             {
-                _currentResultIndex = 0;
-                ScrollToResult(_searchResults[_currentResultIndex]);
+                listViewItem.Background = GetHighlightColor(logEntry);
             }
+
+            _searchResults.Add(index);
+        }
+
+        if (_searchResults.Any())
+        {
+            _currentResultIndex = 0;
+            ScrollToResult(_searchResults[_currentResultIndex]);
         }
 
         _previousQuery = query;
 
         UpdateButtonStates();
+    }
+
+
+    private void ClearSearchResults()
+    {
+        foreach (var index in _searchResults)
+        {
+            if (LogListView.ContainerFromIndex(index) is ListViewItem listViewItem)
+            {
+                listViewItem.Background = ColorManager.GetBrush("DefaultHighlightColor");
+            }
+        }
+        _searchResults.Clear();
+    }
+
+    private SolidColorBrush GetHighlightColor(LogEntry logEntry)
+    {
+        var brush = logEntry.Level switch
+        {
+            "V" => ColorManager.GetBrush("HVerboseColor"),
+            "D" => ColorManager.GetBrush("HDebugColor"),
+            "I" => ColorManager.GetBrush("HInfoColor"),
+            "W" => ColorManager.GetBrush("HWarningColor"),
+            "E" => ColorManager.GetBrush("HErrorColor"),
+            "F" => ColorManager.GetBrush("HFatalColor"),
+            _ => ColorManager.GetBrush("DefaultHighlightColor"),
+        };
+
+        return brush;
+    }
+
+    private void TimespanButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        // Get the ToggleButton that was clicked
+        var toggleButton = sender as ToggleButton;
+
+        // Get the parent Grid that contains the DataContext
+        var grid = toggleButton.Parent as Grid;
+
+        // Get the LogEntry from the DataContext
+        var logEntry = grid.DataContext as LogEntry;
+
+        // Get the index of the LogEntry in the ListView
+        var index = LogListView.Items.IndexOf(logEntry);
+
+        // Parse the date and time string to a DateTime object
+        var dateTimeString = $"{logEntry.Date} {logEntry.Time}";
+        var logEntryDateTime = DateTime.ParseExact(dateTimeString, "MM-dd HH:mm:ss.fff", null);
+
+        // Add the DateTime to the list
+        _timespanData.Add(logEntryDateTime);
+        _timespanIndices.Add(index);
+
+        // Print the timespans
+        PrintTimespans();
+    }
+
+    private void PrintTimespans()
+    {
+        if (_timespanData.Count < 2)
+            return;
+
+        var prevDateTime = _timespanData[0];
+        var currDateTime = _timespanData[^1];
+
+        TimeSpan timespan = currDateTime.Subtract(prevDateTime);
+        TimespanTextBlock.Text = $"{timespan:hh\\:mm\\:ss\\.ffff}";
+    }
+
+    private void ClearTimespanButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        _timespanData.Clear();
+        _timespanIndices.Clear();
+
+        // Loop through all the ListViewItems and set the TimespanButton IsChecked to false
+        for (var i = 0; i < LogListView.Items.Count; i++)
+        {
+            var listViewItem = LogListView.ContainerFromIndex(i) as ListViewItem;
+            if (listViewItem == null) continue;
+
+            FindTimespanButton(listViewItem, out var timespanButton);
+            timespanButton.IsChecked = false;
+        }
+
+        // Reset the Timespan TextBlock
+        TimespanTextBlock.Text = "00:00:00.0000";
+    }
+
+    private void FindTimespanButton(DependencyObject obj, out ToggleButton button)
+    {
+        button = null;
+        var childrenCount = VisualTreeHelper.GetChildrenCount(obj);
+        for (var i = 0; i < childrenCount; i++)
+        {
+            var child = VisualTreeHelper.GetChild(obj, i);
+            if (child is ToggleButton { Name: "TimespanButton" } toggleButton)
+            {
+                button = toggleButton;
+                return;
+            }
+            FindTimespanButton(child, out button);
+        }
     }
 }

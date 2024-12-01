@@ -9,15 +9,32 @@
     <Page.Resources>
         <!-- DataTemplate for LogEntry -->
         <DataTemplate x:DataType="local:LogEntry" x:Key="LogEntryTemplate">
-            <TextBlock
-                x:Name="LogEntryText"
-                FontFamily="Consolas"
-                FontSize="12"
-                Text="{x:Bind FormattedEntry}"
-                Foreground="{x:Bind Color}"
-                TextWrapping="Wrap"
-                IsTextSelectionEnabled="True"
-                Margin="5,0,5,0" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ToggleButton Grid.Column="0"
+                              x:Name="TimespanButton"
+                              DataContext="{Binding}"
+                              MinHeight="1"
+                              MinWidth="1"
+                              Padding="3"
+                              Background="#00000000"
+                              Click="TimespanButton_OnClick"
+                              VerticalAlignment="Top">
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="12" Glyph="&#xE916;" />
+                </ToggleButton>
+                <TextBlock
+                    Grid.Column="1" x:Name="LogEntryText"
+                    FontFamily="Consolas"
+                    FontSize="13"
+                    Text="{x:Bind FormattedEntry}"
+                    Foreground="{x:Bind Color}"
+                    TextWrapping="Wrap"
+                    IsTextSelectionEnabled="True"
+                    Margin="5,0,15,0" />
+            </Grid>
         </DataTemplate>
 
         <!-- Compact ListViewItem Style -->
@@ -137,18 +154,36 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock
-                Grid.Column="0"
-                x:Name="LogEntriesDisplayCount"
-                FontFamily="Consolas"
-                FontSize="12"
-                Text="{x:Bind LogEntriesDisplay.Count}"
-                TextWrapping="Wrap"
-                MinWidth="750"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Left"
-                IsTextSelectionEnabled="True"
-                Margin="5,0,5,0" />
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button x:Name="ClearTimespanButton"
+                              Click="ClearTimespanButton_OnClick"
+                              VerticalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="13" Glyph="&#xE916;" />
+                        <TextBlock Text="Clear Timespans" Margin="5,0,5,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <TextBlock
+                    FontFamily="Consolas"
+                    FontSize="16"
+                    Text="Timespan: "
+                    TextWrapping="Wrap"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    IsTextSelectionEnabled="True"
+                    Margin="5,0,5,0" />
+                <TextBlock
+                    x:Name="TimespanTextBlock"
+                    FontFamily="Consolas"
+                    FontSize="16"
+                    Text="0 Day(s) - 00:00:00.0000"
+                    TextWrapping="Wrap"
+                    Width="480"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    IsTextSelectionEnabled="True"
+                    Margin="5,0,5,0" />
+            </StackPanel>
             <Button Grid.Column="1"
                     x:Name="PrevResultButton"
                     IsEnabled="False"

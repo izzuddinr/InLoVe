@@ -1,0 +1,93 @@
+<Window
+    x:Class="Qatalyst.DisclaimerWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Qatalyst">
+
+    <Grid x:Name="DisclaimerWindowGrid" Margin="10,20,10,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid x:Name="MainGrid" VerticalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <FontIcon
+                FontFamily="{StaticResource FluentIconsFont}"
+                FontSize="196"
+                Foreground="#FF0000"
+                Margin="10,10,10,0"
+                VerticalAlignment="Bottom"
+                Glyph="&#xE7BA;" />
+            <TextBlock
+                Grid.Row="1"
+                FontFamily="Consolas"
+                FontSize="16"
+                TextAlignment="Center"
+                Text="QATALYST is a work in progress, even the app isn’t sure what it does yet."
+                TextWrapping="Wrap"
+                Foreground="#FFFFFF"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center"/>
+            <TextBlock
+                Grid.Row="2"
+                FontFamily="Consolas"
+                FontSize="16"
+                TextAlignment="Center"
+                Text="You might encounter 'new features' that even we didn't know existed."
+                TextWrapping="Wrap"
+                Foreground="#FFFFFF"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center" />
+            <TextBlock
+                Grid.Row="3"
+                FontFamily="Consolas"
+                FontSize="16"
+                TextAlignment="Center"
+                Text=" "
+                TextWrapping="Wrap"
+                Foreground="#FFFFFF"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center" />
+            <TextBlock
+                Grid.Row="4"
+                FontFamily="Consolas"
+                FontSize="16"
+                TextAlignment="Center"
+                Text="Are you absolutely, positively, 110% sure to continue?"
+                TextWrapping="Wrap"
+                Foreground="#FFFFFF"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center" />
+            <Grid Grid.Row="5" x:Name="ChoiceGrid"
+                  Margin="20, 10"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        x:Name="GoodButton"
+                        Width="250"
+                        Margin="20, 10"
+                        Content="Sure, let's see what breaks!"
+                        Background="#4E8752"
+                        Click="GoodButton_OnClick"/>
+                <Button Grid.Column="1"
+                        x:Name="BadButton"
+                        Width="250"
+                        Margin="20, 10"
+                        Content="Nope, I like stable things."
+                        Background="#B54747"
+                        Click="BadButton_OnClick"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

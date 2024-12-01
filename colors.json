@@ -1,11 +1,25 @@
 {
 	"StartColor": "#4E8752",
 	"StopColor": "#B54747",
+
+	"TrueColor": "#E88C94",
+	"FalseColor": "#8CE8E0",
+
 	"VerboseColor": "#FCFCFC",
 	"DebugColor": "#BDDEE7",
 	"InfoColor": "#DEE6C2",
 	"WarningColor": "#FFE15C",
 	"ErrorColor": "#FF5C7A",
 	"FatalColor": "#B8002B",
-	"AppBackgroundColor": "#201E23"
+
+	"HVerboseColor": "#66A0A0A0",
+	"HDebugColor": "#669ACEE0",
+	"HInfoColor": "#66C3D3A2",
+	"HWarningColor": "#66FFD27F",
+	"HErrorColor": "#66FF8698",
+	"HFatalColor": "#66D42F4F",
+
+	"AppBackgroundColor": "#201E23",
+
+	"DefaultHighlightColor": "#00000000"
 }

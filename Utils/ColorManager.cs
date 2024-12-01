@@ -79,7 +79,7 @@ public static class ColorManager
 
         // Parse ARGB values
         byte a = 255; // Default alpha value (opaque)
-        int startIndex = 1;
+        var startIndex = 1;
 
         if (hexColor.Length == 9) // #AARRGGBB format
         {
@@ -87,9 +87,9 @@ public static class ColorManager
             startIndex += 2;
         }
 
-        byte r = Convert.ToByte(hexColor.Substring(startIndex, 2), 16);
-        byte g = Convert.ToByte(hexColor.Substring(startIndex + 2, 2), 16);
-        byte b = Convert.ToByte(hexColor.Substring(startIndex + 4, 2), 16);
+        var r = Convert.ToByte(hexColor.Substring(startIndex, 2), 16);
+        var g = Convert.ToByte(hexColor.Substring(startIndex + 2, 2), 16);
+        var b = Convert.ToByte(hexColor.Substring(startIndex + 4, 2), 16);
 
         return Color.FromArgb(a, r, g, b);
     }

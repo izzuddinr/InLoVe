@@ -1,7 +1,10 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Windowing;
 using Qatalyst.Services;
+using WinRT.Interop;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 
 namespace Qatalyst;
@@ -41,8 +44,32 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        ShowDisclaimerMessageBox();
+    }
+
+    private void ShowDisclaimerMessageBox()
+    {
+        DisclaimerWindow disclaimerWindow = new DisclaimerWindow();
+        disclaimerWindow.ExtendsContentIntoTitleBar = true;
+        disclaimerWindow.Closed += DisclaimerWindowOnClosed;
+        disclaimerWindow.Activate();
+    }
+
+    private void DisclaimerWindowOnClosed(object sender, WindowEventArgs args)
+    {
+        LoadMainWindow();
+    }
+
+    private void LoadMainWindow()
+    {
         MainAppWindow = new MainWindow();
         MainAppWindow.ExtendsContentIntoTitleBar = true;
+
+        if (MainAppWindow.AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.Maximize();
+        }
+
         MainAppWindow.Closed += MainAppWindowOnClosed;
         MainAppWindow.Activate();
     }
@@ -52,10 +79,10 @@ public partial class App : Application
         Services.GetService<AdbProcessManager>()?.Dispose();
     }
 
+
+
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         Services.GetService<AdbProcessManager>()?.Dispose();
     }
-
-
 }
