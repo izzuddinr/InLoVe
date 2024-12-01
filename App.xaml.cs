@@ -77,8 +77,6 @@ public partial class App : Application
         Services.GetService<AdbProcessManager>()?.Dispose();
     }
 
-
-
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         Services.GetService<AdbProcessManager>()?.Dispose();

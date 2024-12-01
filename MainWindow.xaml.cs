@@ -13,6 +13,8 @@ public sealed partial class MainWindow : Window
 
     private readonly Dictionary<string, Frame> _pageFrames = new Dictionary<string, Frame>();
 
+    private DispatcherTimer _memoryUpdateTimer;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -28,6 +30,8 @@ public sealed partial class MainWindow : Window
         _pageFrames["HostRecordPage"] = CreateFrame(typeof(Pages.HostRecordPage));
 
         ContentPresenter.Content = _pageFrames["HomePage"];
+
+        Closed += OnWindowClosed;
     }
 
     private Frame CreateFrame(Type pageType)
@@ -39,7 +43,6 @@ public sealed partial class MainWindow : Window
 
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-
         if (args.SelectedItem is not NavigationViewItem { Tag: string tag }) return;
 
         if (args.IsSettingsSelected)
@@ -56,9 +59,20 @@ public sealed partial class MainWindow : Window
 
     private void StartMemoryUsageUpdate()
     {
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        timer.Tick += (sender, e) => UpdateInfoBar();
-        timer.Start();
+        if (_memoryUpdateTimer == null)
+        {
+            _memoryUpdateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _memoryUpdateTimer.Tick += (sender, e) => UpdateInfoBar();
+        }
+
+        _memoryUpdateTimer.Start();
+    }
+
+    public void StopMemoryUsageUpdate()
+    {
+        if (_memoryUpdateTimer == null || !_memoryUpdateTimer.IsEnabled) return;
+        _memoryUpdateTimer.Stop();
+        _memoryUpdateTimer.Tick -= (sender, e) => UpdateInfoBar();
     }
 
     private void UpdateInfoBar()
@@ -78,5 +92,10 @@ public sealed partial class MainWindow : Window
         {
             Console.WriteLine($"Failed to Update Memory Usage: {e}");
         }
+    }
+
+    private void OnWindowClosed(object sender, WindowEventArgs args)
+    {
+        StopMemoryUsageUpdate();
     }
 }
