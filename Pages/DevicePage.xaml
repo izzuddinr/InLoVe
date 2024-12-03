@@ -12,10 +12,10 @@
 
     <Page.Resources>
         <!-- DataTemplate for LogEntry -->
-        <DataTemplate x:Key="LogEntryTemplate">
+        <DataTemplate x:Key="DeviceCommandHistoryTemplate">
             <TextBlock
-                FontFamily="{StaticResource DefaultFontFamily}"
-                FontSize="15"
+                FontFamily="Consolas"
+                FontSize="13"
                 Text="{Binding}"
                 Foreground="#FFF0F0F0"
                 TextWrapping="Wrap"
@@ -37,15 +37,15 @@
                        Stretch="Uniform"
                        VerticalAlignment="Top" />
                 <StackPanel Grid.Column="1" Margin="8" VerticalAlignment="Center">
-                    <TextBlock FontFamily="{StaticResource DefaultFontFamily}"
+                    <TextBlock FontFamily="{StaticResource JetbrainsMono}"
                                FontSize="16"
                                Text="{x:Bind SerialNumber}"
                                Margin="0,0,0,8" />
-                    <TextBlock FontFamily="{StaticResource DefaultFontFamily}"
+                    <TextBlock FontFamily="{StaticResource JetbrainsMono}"
                                FontSize="13"
                                Text="{x:Bind Model}"
                                Margin="0,0,0,8" />
-                    <TextBlock FontFamily="{StaticResource DefaultFontFamily}"
+                    <TextBlock FontFamily="{StaticResource JetbrainsMono}"
                                FontSize="12"
                                Text="{x:Bind Manufacturer}"/>
                 </StackPanel>
@@ -98,16 +98,27 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- First Column -->
+
+            <TextBlock Grid.Column="0"
+                       Grid.Row="0"
+                       FontSize="24"
+                       Margin="10"
+                       Text="Available Devices"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"/>
+
             <GridView Grid.Column="0"
-                      Grid.Row="0"
+                      Grid.Row="1"
                       x:Name="DeviceGridView"
-                      FontFamily="{StaticResource DefaultFontFamily}"
+                      FontFamily="{StaticResource JetbrainsMono}"
                       FontSize="16"
-                      Header="Available Devices"
                       Margin="10"
                       ItemsSource="{x:Bind DeviceList}"
                       ItemTemplate="{StaticResource DeviceInfoTemplate}"
@@ -119,10 +130,9 @@
                       FlowDirection="LeftToRight"
                       SelectionChanged="DeviceGridView_OnSelectionChanged"/>
 
-            <!-- Reload Button -->
             <Button
                 Grid.Column="0"
-                Grid.Row="1"
+                Grid.Row="2"
                 Margin="10"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center">
@@ -140,11 +150,22 @@
                 </StackPanel>
             </Button>
 
+            <!-- Second Column -->
+
+            <TextBlock Grid.Column="1"
+                       Grid.Row="0"
+                       FontSize="24"
+                       Margin="10"
+                       Text="Device Command Tools"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"/>
+
             <ListView Grid.Column="1"
-                      Grid.Row="0"
+                      Grid.Row="1"
                       x:Name="ConsoleHistoryListView"
                       Margin="10, 10, 10, 0"
-                      ItemTemplate="{StaticResource LogEntryTemplate}"
+                      ItemTemplate="{StaticResource DeviceCommandHistoryTemplate}"
                       ItemsSource="{x:Bind DeviceConsoleHistory, Mode=OneWay}"
                       ItemContainerStyle="{StaticResource CustomListViewItemStyle}"
                       HorizontalAlignment="Stretch"
@@ -157,7 +178,7 @@
                 </ListView.ItemsPanel>
             </ListView>
             <Grid Grid.Column="1"
-                  Grid.Row="1"
+                  Grid.Row="2"
                   x:Name="ConsoleControlGrid"
                   Margin="10, 0, 10, 10">
                 <Grid.ColumnDefinitions>
@@ -165,7 +186,10 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <CommandBar Background="#323135" IsOpen="False" DefaultLabelPosition="Right">
+                <CommandBar Grid.Column="0"
+                            Background="#323135"
+                            IsOpen="False"
+                            DefaultLabelPosition="Right">
                     <AppBarButton Label="Input Text"
                                   Tag="0"
                                   Click="CommandButton_OnClick">
@@ -184,18 +208,11 @@
                             <KeyboardAccelerator Key="C" Modifiers="Control"/>
                         </AppBarButton.KeyboardAccelerators>
                     </AppBarButton>
-                    <CommandBar.SecondaryCommands>
-                        <AppBarButton Icon="Setting" Label="Settings">
-                            <AppBarButton.KeyboardAccelerators>
-                                <KeyboardAccelerator Modifiers="Control" Key="I" />
-                            </AppBarButton.KeyboardAccelerators>
-                        </AppBarButton>
-                    </CommandBar.SecondaryCommands>
                 </CommandBar>
 
                 <AutoSuggestBox x:Name="DeviceCommandInputBox"
                                 Grid.Column="1"
-                                FontFamily="{StaticResource DefaultFontFamily}"
+                                FontFamily="{StaticResource JetbrainsMono}"
                                 FontSize="13"
                                 QueryIcon="Send"
                                 CornerRadius="0"

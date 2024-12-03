@@ -79,6 +79,7 @@
 
         <CommandBar Grid.Row="1"
                     IsOpen="False"
+                    Background="#323135"
                     VerticalContentAlignment="Center"
                     DefaultLabelPosition="Right">
             <CommandBar.Content>
@@ -86,36 +87,67 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0"
-                            x:Name="ClearTimespanButton"
-                            CornerRadius="0"
-                            BorderThickness="0"
-                            Background="Transparent"
-                            Click="ClearTimespanButton_OnClick"
-                            VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="13" Glyph="&#xE916;" />
-                            <TextBlock Text="Clear Timespans" Margin="5,0,5,0" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <TextBlock Grid.Column="1"
+                    <TextBlock Grid.Column="0"
                                FontFamily="Consolas"
-                               FontSize="16"
+                               FontSize="13"
+                               Foreground="#FF19B6DD"
                                Text="Timespan: "
                                TextWrapping="Wrap"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"
                                IsTextSelectionEnabled="True"
                                Margin="5,0,5,0" />
-                    <TextBlock Grid.Column="2"
+                    <TextBlock Grid.Column="1"
                                x:Name="TimespanTextBlock"
                                FontFamily="Consolas"
-                               FontSize="16"
+                               FontSize="13"
                                Text="00:00:00.0000"
                                TextWrapping="Wrap"
-                               Width="480"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <TextBlock Grid.Column="2"
+                               FontFamily="Consolas"
+                               FontSize="13"
+                               Text="Displayed Entries: "
+                               Foreground="#FF19B6DD"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <TextBlock Grid.Column="3"
+                               x:Name="DisplayedEntryCount"
+                               FontFamily="Consolas"
+                               FontSize="13"
+                               Text="0"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <TextBlock Grid.Column="4"
+                               FontFamily="Consolas"
+                               FontSize="13"
+                               Foreground="#FF19B6DD"
+                               Text="Total Entries: "
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <TextBlock Grid.Column="5"
+                               x:Name="AllEntryCount"
+                               FontFamily="Consolas"
+                               FontSize="13"
+                               Text="0"
+                               TextWrapping="Wrap"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"
                                IsTextSelectionEnabled="True"
@@ -162,6 +194,12 @@
                     </Grid>
                 </AppBarElementContainer.Content>
             </AppBarElementContainer>
+            <AppBarButton Label="Clear Timespan"
+                          Click="ClearTimespanButton_OnClick">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE916;"></FontIcon>
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarButton Label="Filter"
                           Click="ShowPackages_Click">
                 <AppBarButton.Icon>
@@ -177,24 +215,16 @@
                     <FontIcon Glyph="&#xE96E;"></FontIcon>
                 </AppBarToggleButton.Icon>
             </AppBarToggleButton>
-            <AppBarToggleButton x:Name="StartStopToggleButton"
-                                Label="Start"
-                                BorderThickness="2"
-                                Foreground="White"
-                                IsEnabled="False"
-                                Checked="StartStopToggleButton_Checked"
-                                Unchecked="StartStopToggleButton_Unchecked">
-                <AppBarToggleButton.Icon>
+            <AppBarButton x:Name="StartStopToggleButton"
+                          Label="Start"
+                          Tag="False"
+                          BorderThickness="1"
+                          IsEnabled="False"
+                          Click="StartStopToggleButton_Click">
+                <AppBarButton.Icon>
                     <FontIcon x:Name="StartStopIcon" Glyph="&#xE768;"></FontIcon>
-                </AppBarToggleButton.Icon>
-            </AppBarToggleButton>
-            <CommandBar.SecondaryCommands>
-                <AppBarButton Icon="Setting" Label="Settings">
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="I" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-            </CommandBar.SecondaryCommands>
+                </AppBarButton.Icon>
+            </AppBarButton>
         </CommandBar>
 
         <!-- ListView for log entries -->
@@ -210,7 +240,5 @@
             ItemContainerStyle="{StaticResource CustomListViewItemStyle}"
             Margin="0, 0, 0, 10">
         </ListView>
-
-
     </Grid>
 </Page>

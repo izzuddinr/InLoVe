@@ -19,7 +19,6 @@ namespace Qatalyst.Pages;
 
 public sealed partial class LogMonitoringPage
 {
-    // Services
     private ObservableCollection<LogEntry> LogEntriesDisplay { get; } = [];
     private ObservableCollection<string> SelectedPackages { get; set; } = [];
 
@@ -35,7 +34,7 @@ public sealed partial class LogMonitoringPage
     private List<DateTime> _timespanData = [];
 
     private ContentDialog? _packageDialog;
-    private DispatcherTimer _scrollDebounceTimer;
+    private DispatcherTimer? _scrollDebounceTimer;
 
     private readonly DispatcherQueue _dispatcherQueue;
 
@@ -43,8 +42,6 @@ public sealed partial class LogMonitoringPage
     private readonly LogStorageService? _logStorageService;
     private readonly PackageNameService? _packageNameService;
     private readonly PubSubService? _pubSubService;
-
-
 
     public LogMonitoringPage()
     {
@@ -65,28 +62,31 @@ public sealed partial class LogMonitoringPage
 
         LogEntriesDisplay.CollectionChanged += LogEntriesDisplayCollectionChanged;
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+        _pubSubService?.Subscribe("LogEntryCount", OnLogEntryCountReceived);
         _pubSubService?.Subscribe("DeviceSelected", OnSelectedDeviceReceived);
         _pubSubService?.Subscribe("PackageCacheInitialized", OnPackageCacheReceived);
     }
 
-    private void LogEntriesDisplayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private async void LogEntriesDisplayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems == null) return;
 
-        foreach (LogEntry newEntry in e.NewItems)
+        foreach (var newEntry in e.NewItems.Cast<LogEntry>())
         {
             if (!newEntry.IsValid) continue;
 
             if (SelectedPackages.Any() && newEntry.PackageName != null && !SelectedPackages.Contains(newEntry.PackageName))
                 continue;
 
-            _dispatcherQueue.TryEnqueue(() =>
+            _dispatcherQueue.TryEnqueue(async void () =>
             {
                 LogListView.Items.Add(newEntry);
+                DisplayedEntryCount.Text = LogEntriesDisplay.Count.ToString();
+                await Task.Yield(); // Allow asynchronous execution if necessary
             });
         }
 
-        ScrollToLatestItem();
+        await ScrollToLatestItemAsync();
     }
 
     private void OnLogEntryReceived(object eventData)
@@ -104,9 +104,12 @@ public sealed partial class LogMonitoringPage
 
             logEntry.GetColorForLogLevel();
             LogEntriesDisplay.Add(logEntry);
-            ScrollToLatestItem();
+            ScrollToLatestItemAsync();
         });
     }
+
+    private void OnLogEntryCountReceived(object eventData) =>
+        _dispatcherQueue.TryEnqueue(() => AllEntryCount.Text = (string)eventData);
 
     private void OnSelectedDeviceReceived(object eventData)
     {
@@ -160,17 +163,19 @@ public sealed partial class LogMonitoringPage
         _isAutoScrollEnabled = false;
     }
 
-    private void ScrollToLatestItem()
+    private Task ScrollToLatestItemAsync()
     {
+        if (_scrollDebounceTimer != null)
+            _scrollDebounceTimer.Stop();
+
         _scrollDebounceTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(200) // Set debounce delay
         };
+
         _scrollDebounceTimer.Tick += (s, e) =>
         {
             _scrollDebounceTimer.Stop();
-
-            // Perform the scroll operation
             if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 0 && LogListView.Items.Count > 5)
             {
                 _dispatcherQueue.TryEnqueue(() =>
@@ -183,40 +188,48 @@ public sealed partial class LogMonitoringPage
         // Restart the debounce timer on every call
         _scrollDebounceTimer.Stop();
         _scrollDebounceTimer.Start();
+        return Task.CompletedTask;
     }
+
 
     private void LoadPackages()
     {
         if (_packageNameService != null) _availablePackages = _packageNameService.GetRunningPackages();
     }
 
-    private void StartStopToggleButton_Checked(object sender, RoutedEventArgs e)
+    private void StartStopToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        StartStopIcon.Glyph = "\uE71A";
-        StartStopToggleButton.Label = "Stop";
-        StartStopToggleButton.Foreground = ColorManager.GetBrush("StopColor");
-        StartLogcat();
+        if (sender is not AppBarButton button) return;
+
+        var currentState = button.Tag is bool tagValue && tagValue;
+        var newState = !currentState;
+
+        Console.WriteLine($"Current state is {currentState}, newState is {newState}");
+
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            button.Tag = newState;
+            button.Label = newState ? "Stop" : "Start";
+            StartStopIcon.Glyph = newState ? "\uE71A" : "\uE768";
+            StartStopToggleButton.Foreground = newState
+                ? ColorManager.GetBrush("StopColor")
+                : ColorManager.GetBrush("StartColor");
+        });
+
+        if (newState)
+            StartLogcat(SelectedDevice.SerialNumber);
+        else
+            StopLogcat();
     }
 
     private void StartStopToggleButton_Unchecked(object sender, RoutedEventArgs e)
     {
-        StartStopIcon.Glyph = "\uE768";
-        StartStopToggleButton.Label = "Start";
-        StartStopToggleButton.Foreground = ColorManager.GetBrush("StartColor");
-        StopLogcat();
     }
 
-    private async void StartLogcat()
+    private async void StartLogcat(string serialNumber)
     {
-        try
-        {
-            ClearLogs();
-            await Task.Run(() => _logcatService?.StartLogcat(SelectedDevice.SerialNumber));
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Error starting log cat: {e.Message} {e.StackTrace}");
-        }
+        ClearLogs();
+        if (_logcatService != null) await _logcatService.StartLogcat(serialNumber);
     }
 
     private void StopLogcat()

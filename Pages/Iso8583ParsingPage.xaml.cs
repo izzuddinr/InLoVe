@@ -35,6 +35,7 @@ public partial class Iso8583ParsingPage
     private List<TreeView> _isoMsgTreeView = [];
     private SolidColorBrush receiptTextColor;
     private bool _isParsingMessage;
+    private string _currentParsingType = string.Empty;
     private CancellationTokenSource? _processingCancellationTokenSource;
 
     public Iso8583ParsingPage()
@@ -104,19 +105,20 @@ public partial class Iso8583ParsingPage
     private (bool IsValidTag, bool IsValidMessage, string MessageType) GetLogType(LogEntry logEntry)
     {
         if (_configService == null)
+        {
             return (false, false, string.Empty);
+        }
 
         var message = logEntry.Message;
         var tag = logEntry.Tag;
-
 
         // Determine message type
         var isReceiptTag = tag?.Contains("APP_PRINT") == true;
         var isIsoTag = _configService.Iso8583Filter?.Tag.Contains(tag) == true;
         var isTagValid = !string.IsNullOrEmpty(tag);
-        var isMessageValid = isReceiptTag ?
-            ContainsValidKeywords(message) :
-            !string.IsNullOrEmpty(message) && message.Contains('|') && ContainsValidKeywords(message);
+        var isMessageValid = isReceiptTag
+            ? ContainsValidKeywords(message)
+            : !string.IsNullOrEmpty(message) && message.Contains('|') && ContainsValidKeywords(message);
 
         var messageType = isReceiptTag ? "RECEIPT_MSG" : "ISO_MSG";
 
@@ -138,45 +140,59 @@ public partial class Iso8583ParsingPage
         return Task.Run(() =>
         {
             var message = logEntry.Message;
-            var (isValidTag, isValidMessage, messageType) = GetLogType(logEntry);
+            var (isValidTag, isValidMessage, parsingType) = GetLogType(logEntry);
 
-            if (ShouldFinalizeMessage(messageType, isValidTag, message)) FinalizeCurrentMessage(messageType);
+            var isValidParsingType = !string.IsNullOrEmpty(_currentParsingType)
+                                     && _currentParsingType.Equals(parsingType);
+            if (ShouldFinalizeMessage(parsingType, isValidParsingType, isValidTag, message))
+            {
+                FinalizeCurrentMessage(parsingType);
+                return;
+            }
 
             if (isValidTag && isValidMessage)
             {
-                Console.WriteLine($"Tag: {logEntry.Tag} - Message: {message}");
+                if (_isParsingMessage && isValidParsingType)
+                {
+                    FinalizeCurrentMessage(parsingType);
+                }
 
-                if (_isParsingMessage) FinalizeCurrentMessage(messageType);
-
+                isValidParsingType = true;
                 _isParsingMessage = true;
+                _currentParsingType = parsingType;
             }
 
-            if (_isParsingMessage && isValidTag)
+            if (_isParsingMessage && isValidParsingType && isValidTag)
             {
                 _currentMessageBuffer.Add(message);
             }
         });
     }
 
-    private bool ShouldFinalizeMessage(string messageType, bool isValidTag, string message)
+    private bool ShouldFinalizeMessage(string parsingType, bool isValidParsingType, bool isValidTag, string message)
     {
-        return messageType switch
+        var shouldFinalize = parsingType switch
         {
-            "RECEIPT_MSG" => _isParsingMessage && isValidTag && message.Contains("END PRINTING"),
-            "ISO_MSG" => _isParsingMessage && ((isValidTag && !message.Contains('|')) || !isValidTag),
+            "RECEIPT_MSG" => _isParsingMessage
+                             && isValidParsingType
+                             && isValidTag
+                             && message.Contains("END PRINTING"),
+            "ISO_MSG" => _isParsingMessage
+                         && isValidParsingType
+                         && ((isValidTag && !message.Contains('|')) || !isValidTag),
             _ => false
         };
+        return shouldFinalize;
     }
 
-    private void FinalizeCurrentMessage(string messageType = "ISO_MSG")
+
+    private void FinalizeCurrentMessage(string parsingType = "ISO_MSG")
     {
         if (_currentMessageBuffer.Count == 0) return;
 
         var fullMessage = string.Join("\r\n", _currentMessageBuffer);
 
-        Console.WriteLine($"fullMessage: {fullMessage}");
-
-        switch (messageType)
+        switch (parsingType)
         {
             case "RECEIPT_MSG":
                 var receipt = ParseReceiptMessage();
@@ -189,6 +205,7 @@ public partial class Iso8583ParsingPage
         }
         _currentMessageBuffer.Clear();
         _isParsingMessage = false;
+        _currentParsingType = string.Empty;
     }
 
     private List<string> ParseReceiptMessage()
@@ -391,9 +408,7 @@ public partial class Iso8583ParsingPage
         return formattedData.ToString().TrimEnd();
     }
 
-
     private static CustomTreeViewContent CreateNewNode(string value, Brush color) => new() { Value = value, TextColor = color};
-
 
     private static CustomTreeViewContent CreateNewNode(KeyValuePair<int,ISO8583DataElement> data, Brush color, string? length = null)
     {

@@ -19,11 +19,11 @@
                 <ResourceDictionary Source="/Resources/HostRecordTreeViewNodeStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Reference to Segoe Fluent Icons -->
             <FontFamily x:Key="FluentIconsFont">ms-appx:///Assets/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
 
-            <!-- Define the default font family -->
-            <FontFamily x:Key="DefaultFontFamily">ms-appx:///Assets/Fonts/Assets/JetBrainsMono.ttf#JetBrains Mono</FontFamily>
+            <FontFamily x:Key="JetbrainsMono">ms-appx:///Assets/Fonts/Assets/JetBrainsMono.ttf#JetBrains Mono Light</FontFamily>
+
+            <FontFamily x:Key="FiraCode">ms-appx:///Assets/Fonts/Assets/FiraCode.ttf#Fira Code</FontFamily>
 
         </ResourceDictionary>
     </Application.Resources>

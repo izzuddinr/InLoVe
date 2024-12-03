@@ -25,6 +25,7 @@ public class LogStorageService
         entry.Id = System.Threading.Interlocked.Increment(ref _currentId);
         _logEntries[entry.Id] = entry;
         _pubSubService.Publish("LogEntrySaved", entry);
+        _pubSubService.Publish("LogEntryCount", _logEntries.Count.ToString());
         return Task.CompletedTask;
     }
 

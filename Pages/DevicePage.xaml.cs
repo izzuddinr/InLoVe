@@ -6,7 +6,6 @@ using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Qatalyst.Objects;
 using Qatalyst.Services;
@@ -20,7 +19,6 @@ public sealed partial class DevicePage : Page
     private readonly PubSubService? _pubSubService;
 
     public ObservableCollection<string> DeviceConsoleHistory = [];
-    public ObservableCollection<string> DeviceConsoleCommands = [];
     public ObservableCollection<DeviceInfo> DeviceList = [];
 
     private DeviceInfo? _currentDeviceInfo = null;
@@ -35,8 +33,6 @@ public sealed partial class DevicePage : Page
         _deviceService = App.Services.GetService<DeviceService>();
         _pubSubService = App.Services.GetService<PubSubService>();
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-
-        DeviceConsoleCommands = ["Input Text", "Screen Capture (Image)"];
 
         ContentGrid.Background = ColorManager.GetBrush(ApplicationColor.AppBackgroundColor.ToString());
         ConsoleHistoryListView.Background = new SolidColorBrush(Colors.Black);
@@ -90,16 +86,19 @@ public sealed partial class DevicePage : Page
         AddNewLog($"\"{command}\" sent to device.");
     }
 
-    private void DoScreenshot()
+    private void DoScreenshot(string? filename = null)
     {
-        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var screenshotFileName = $"screenshot_{timestamp}.png";
-        var devicePath = $"/sdcard/{screenshotFileName}";
-        var pcPath = $@"{AppContext.BaseDirectory}Screenshots\{screenshotFileName}";
+        if (_deviceService == null || _currentDeviceInfo?.SerialNumber == null) return;
 
-        _deviceService.RunAdbCommand($"shell screencap -p {devicePath}");
-        _deviceService.RunAdbCommand($"pull {devicePath} {pcPath}");
-        _deviceService.RunAdbCommand($"shell rm {devicePath}");
+        var serialNumber = _currentDeviceInfo.SerialNumber;
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var screenshotFileName = filename is null ? $"screenshot_{timestamp}.png" : $"{filename}.png";
+        var devicePath = $"/sdcard/{screenshotFileName}";
+        var pcPath = $@"{Environment.CurrentDirectory}Screenshots\{screenshotFileName}";
+
+        _deviceService.RunAdbCommand($"-s {serialNumber} shell screencap -p {devicePath}");
+        _deviceService.RunAdbCommand($"-s {serialNumber} pull {devicePath} {pcPath}");
+        _deviceService.RunAdbCommand($"-s {serialNumber} shell rm {devicePath}");
 
         AddNewLog($"Screenshot saved to {pcPath}");
     }
@@ -119,7 +118,7 @@ public sealed partial class DevicePage : Page
                         DoSendTextInput($"shell input text \"{args.QueryText}\"");
                         break;
                     case 1:
-                        DoScreenshot();
+                        DoScreenshot(string.IsNullOrWhiteSpace(args.QueryText) ? null : args.QueryText);
                         break;
                     default:
                         throw new InvalidOperationException("Invalid command index");

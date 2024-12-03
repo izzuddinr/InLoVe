@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -39,10 +40,11 @@ public sealed partial class MainWindow : Window
 
     private void InitializeDirectories()
     {
-        string screenshotsDirectory = $@"{AppContext.BaseDirectory}\Screenshots";
+        var screenshotsDirectory = $@"{Environment.CurrentDirectory}\Screenshots";
 
         if (!Directory.Exists(screenshotsDirectory))
         {
+            Console.WriteLine($"Creating screenshots directory: {screenshotsDirectory}");
             Directory.CreateDirectory(screenshotsDirectory);
         }
     }
