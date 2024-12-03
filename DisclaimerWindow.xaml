@@ -18,13 +18,14 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <FontIcon
-                FontFamily="{StaticResource FluentIconsFont}"
-                FontSize="196"
-                Foreground="#FF0000"
-                Margin="10,10,10,0"
-                VerticalAlignment="Bottom"
-                Glyph="&#xE7BA;" />
+            <Image Grid.Row="0"
+                   Margin="40"
+                   MaxWidth="480"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Stretch="Uniform">
+                <Image.Source>/Assets/LogoCompact.png</Image.Source>
+            </Image>
             <TextBlock
                 Grid.Row="1"
                 FontFamily="Consolas"

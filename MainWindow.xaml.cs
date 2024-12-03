@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -18,6 +19,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeDirectories();
         InitializeFrames();
         StartMemoryUsageUpdate();
     }
@@ -34,6 +36,17 @@ public sealed partial class MainWindow : Window
 
         Closed += OnWindowClosed;
     }
+
+    private void InitializeDirectories()
+    {
+        string screenshotsDirectory = $@"{AppContext.BaseDirectory}\Screenshots";
+
+        if (!Directory.Exists(screenshotsDirectory))
+        {
+            Directory.CreateDirectory(screenshotsDirectory);
+        }
+    }
+
 
     private Frame CreateFrame(Type pageType)
     {

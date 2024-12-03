@@ -72,7 +72,6 @@ public class LogcatService
         if (_logcatProcess != null && _logcatProcess is not { HasExited: true })
         {
             _processManager.KillAllManagedProcesses();
-            _logcatProcess = null;
             Console.WriteLine("Logcat process stopped.");
         }
         else

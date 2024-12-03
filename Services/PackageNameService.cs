@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Qatalyst.Objects;
 
 namespace Qatalyst.Services;
 
@@ -91,9 +92,9 @@ public class PackageNameService
         {
             try
             {
-                if (eventData is not string selectedDevice) return;
-                Console.WriteLine($"Device selected: {selectedDevice}");
-                await InitializeCacheAsync();
+                if (eventData is not DeviceInfo selectedDevice) return;
+                Console.WriteLine($"Device selected: {selectedDevice.SerialNumber}");
+                await BuildPackageNameCacheAsync(selectedDevice);
             }
             catch (Exception ex)
             {
@@ -102,14 +103,16 @@ public class PackageNameService
         }
 
 
-        private async Task InitializeCacheAsync()
+        private async Task BuildPackageNameCacheAsync(DeviceInfo? deviceInfo)
         {
+            if (deviceInfo is null) return;
+
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "adb",
-                    Arguments = "shell ps",
+                    Arguments = $"-s {deviceInfo.SerialNumber} shell ps",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -122,6 +125,7 @@ public class PackageNameService
 
             var lines = output.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
 
+            _packageCache.Clear();
             foreach (var line in lines)
             {
                 var parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
@@ -150,7 +154,7 @@ public class PackageNameService
             return _packageCache.Values.Distinct().ToList();
         }
 
-        public List<string> GetDefaultPackage()
+        private List<string> GetDefaultPackage()
         {
             var filteredPackages = _packageCache
                 .Where(package => package.Value.Contains(".ingenico") || package.Value.Contains(".ingp"))

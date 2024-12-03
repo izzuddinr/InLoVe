@@ -10,6 +10,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <!-- Default WinUI Controls Resources -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="/Resources/ThemeResources.xaml" />
 
                 <!-- Reference to custom Resource Dictionaries -->
                 <ResourceDictionary Source="/Resources/Colors.xaml" />
@@ -20,6 +21,9 @@
 
             <!-- Reference to Segoe Fluent Icons -->
             <FontFamily x:Key="FluentIconsFont">ms-appx:///Assets/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
+
+            <!-- Define the default font family -->
+            <FontFamily x:Key="DefaultFontFamily">ms-appx:///Assets/Fonts/Assets/JetBrainsMono.ttf#JetBrains Mono</FontFamily>
 
         </ResourceDictionary>
     </Application.Resources>

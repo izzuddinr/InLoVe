@@ -77,63 +77,125 @@
         <!-- Title -->
         <TextBlock Text="Log Monitoring" FontSize="24" Margin="10" Grid.Row="0" />
 
-        <!-- Device selection and controls -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <Button Grid.Column="0"
-                    x:Name="LoadDeviceButton"
-                    Margin="0, 5, 5, 0"
-                    Click="RefreshDevice_Click">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE72C;" />
-                </StackPanel>
-            </Button>
-            <ComboBox x:Name="DeviceComboBox"
-                      Grid.Column="1"
-                      HorizontalAlignment="Stretch"
-                      Margin="0, 5, 5, 0"
-                      PlaceholderText="Select Device"
-                      VerticalAlignment="Center"
-                      SelectionChanged="DeviceComboBox_OnSelectionChanged" />
-            <Button Grid.Column="2"
-                    Margin="0, 5, 5, 0"
-                    Click="ShowPackages_Click">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE71C;" />
-                    <TextBlock Text="Filter" Margin="5,0,0,0" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-            <ToggleButton Grid.Column="3"
-                          x:Name="AutoScrollToggleButton"
-                          IsChecked="False"
-                          Margin="0, 5, 5, 0"
-                          Checked="AutoScrollToggleButton_Checked"
-                          Unchecked="AutoScrollToggleButton_Unchecked">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE96E;" />
-                    <TextBlock Text="Auto-scroll" Margin="5,0,0,0" VerticalAlignment="Center" />
-                </StackPanel>
-            </ToggleButton>
-            <ToggleButton Grid.Column="4"
-                          x:Name="StartStopToggleButton"
-                          Foreground="White"
-                          Margin="0, 5, 5, 0"
-                          Checked="StartStopToggleButton_Checked"
-                          Unchecked="StartStopToggleButton_Unchecked">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon x:Name="StartStopIcon" FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE768;" />
-                    <TextBlock x:Name="StartStopText" Text="Start" Margin="5,0,0,0" VerticalAlignment="Center" />
-                </StackPanel>
-            </ToggleButton>
-        </Grid>
+        <CommandBar Grid.Row="1"
+                    IsOpen="False"
+                    VerticalContentAlignment="Center"
+                    DefaultLabelPosition="Right">
+            <CommandBar.Content>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"
+                            x:Name="ClearTimespanButton"
+                            CornerRadius="0"
+                            BorderThickness="0"
+                            Background="Transparent"
+                            Click="ClearTimespanButton_OnClick"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="13" Glyph="&#xE916;" />
+                            <TextBlock Text="Clear Timespans" Margin="5,0,5,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Grid.Column="1"
+                               FontFamily="Consolas"
+                               FontSize="16"
+                               Text="Timespan: "
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <TextBlock Grid.Column="2"
+                               x:Name="TimespanTextBlock"
+                               FontFamily="Consolas"
+                               FontSize="16"
+                               Text="00:00:00.0000"
+                               TextWrapping="Wrap"
+                               Width="480"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
+                               Margin="5,0,5,0" />
+                    <AppBarSeparator Grid.Column="3"></AppBarSeparator>
+                </Grid>
+            </CommandBar.Content>
+            <AppBarElementContainer MinWidth="500"
+                                    MaxWidth="750"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Center">
+                <AppBarElementContainer.Content>
+                    <Grid Margin="0" HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                x:Name="PrevResultButton"
+                                IsEnabled="False"
+                                VerticalAlignment="Stretch"
+                                Click="OnPreviousButtonClick">
+                            <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70E;" />
+                        </Button>
+                        <Button Grid.Column="1"
+                                x:Name="NextResultButton"
+                                IsEnabled="False"
+                                Margin="5, 0,0,0"
+                                Click="OnNextButtonClick"
+                                VerticalAlignment="Stretch">
+                            <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70D;" />
+                        </Button>
+                        <AutoSuggestBox Grid.Column="2"
+                                        x:Name="LogSearchBox"
+                                        FontFamily="Consolas"
+                                        FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="5, 0,0,0"
+                                        PlaceholderText="Search Logcat"
+                                        QueryIcon="Find"
+                                        QuerySubmitted="LogSearchBox_OnQuerySubmitted"
+                                        TextChanged="LogSearchBox_OnTextChanged"/>
+                    </Grid>
+                </AppBarElementContainer.Content>
+            </AppBarElementContainer>
+            <AppBarButton Label="Filter"
+                          Click="ShowPackages_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE71C;"></FontIcon>
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarToggleButton x:Name="AutoScrollToggleButton"
+                                Label="Auto-scroll"
+                                IsChecked="False"
+                                Checked="AutoScrollToggleButton_Checked"
+                                Unchecked="AutoScrollToggleButton_Unchecked">
+                <AppBarToggleButton.Icon>
+                    <FontIcon Glyph="&#xE96E;"></FontIcon>
+                </AppBarToggleButton.Icon>
+            </AppBarToggleButton>
+            <AppBarToggleButton x:Name="StartStopToggleButton"
+                                Label="Start"
+                                BorderThickness="2"
+                                Foreground="White"
+                                IsEnabled="False"
+                                Checked="StartStopToggleButton_Checked"
+                                Unchecked="StartStopToggleButton_Unchecked">
+                <AppBarToggleButton.Icon>
+                    <FontIcon x:Name="StartStopIcon" Glyph="&#xE768;"></FontIcon>
+                </AppBarToggleButton.Icon>
+            </AppBarToggleButton>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton Icon="Setting" Label="Settings">
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="I" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+            </CommandBar.SecondaryCommands>
+        </CommandBar>
 
         <!-- ListView for log entries -->
         <ListView
@@ -146,70 +208,9 @@
             SelectionMode="Single"
             ItemTemplate="{StaticResource LogEntryTemplate}"
             ItemContainerStyle="{StaticResource CustomListViewItemStyle}"
-            Margin="0, 10">
+            Margin="0, 0, 0, 10">
         </ListView>
 
-        <Grid Grid.Row="3" Margin="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button x:Name="ClearTimespanButton"
-                              Click="ClearTimespanButton_OnClick"
-                              VerticalAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="13" Glyph="&#xE916;" />
-                        <TextBlock Text="Clear Timespans" Margin="5,0,5,0" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <TextBlock
-                    FontFamily="Consolas"
-                    FontSize="16"
-                    Text="Timespan: "
-                    TextWrapping="Wrap"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Left"
-                    IsTextSelectionEnabled="True"
-                    Margin="5,0,5,0" />
-                <TextBlock
-                    x:Name="TimespanTextBlock"
-                    FontFamily="Consolas"
-                    FontSize="16"
-                    Text="00:00:00.0000"
-                    TextWrapping="Wrap"
-                    Width="480"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Left"
-                    IsTextSelectionEnabled="True"
-                    Margin="5,0,5,0" />
-            </StackPanel>
-            <Button Grid.Column="1"
-                    x:Name="PrevResultButton"
-                    IsEnabled="False"
-                    VerticalAlignment="Stretch"
-                    Click="OnPreviousButtonClick">
-                <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70E;" />
-            </Button>
-            <Button Grid.Column="2"
-                    x:Name="NextResultButton"
-                    IsEnabled="False"
-                    Margin="5, 0,0,0"
-                    Click="OnNextButtonClick"
-                    VerticalAlignment="Stretch">
-                <FontIcon FontFamily="{StaticResource FluentIconsFont}" FontSize="18" Glyph="&#xE70D;" />
-            </Button>
-            <AutoSuggestBox Grid.Column="3"  x:Name="LogSearchBox"
-                            FontFamily="Consolas"
-                            FontSize="12"
-                            HorizontalAlignment="Stretch"
-                            Margin="5, 0,0,0"
-                            PlaceholderText="Search Logcat"
-                            QueryIcon="Find"
-                            QuerySubmitted="LogSearchBox_OnQuerySubmitted"
-                            TextChanged="LogSearchBox_OnTextChanged"/>
-        </Grid>
+
     </Grid>
 </Page>

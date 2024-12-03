@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -18,15 +19,14 @@ namespace Qatalyst.Pages;
 
 public sealed partial class LogMonitoringPage
 {
-    public ObservableCollection<LogEntry> LogEntriesDisplay { get; private set; } = [];
-    public ObservableCollection<LogEntry> LogEntriesStorage { get; private set; } = [];
-
+    // Services
+    private ObservableCollection<LogEntry> LogEntriesDisplay { get; } = [];
     private ObservableCollection<string> SelectedPackages { get; set; } = [];
 
+    private DeviceInfo? SelectedDevice { get; set; }
+    private bool _isAutoScrollEnabled;
 
     private List<string> _availablePackages = [];
-    private ContentDialog? _packageDialog;
-
     private List<int> _searchResults = [];
     private int _currentResultIndex = -1;
     private string _previousQuery = string.Empty;
@@ -34,18 +34,16 @@ public sealed partial class LogMonitoringPage
     private List<int> _timespanIndices = [];
     private List<DateTime> _timespanData = [];
 
-    public string SelectedDevice { get; set; } = string.Empty;
+    private ContentDialog? _packageDialog;
+    private DispatcherTimer _scrollDebounceTimer;
 
     private readonly DispatcherQueue _dispatcherQueue;
 
-    private readonly DeviceService? _deviceService;
     private readonly LogcatService? _logcatService;
     private readonly LogStorageService? _logStorageService;
     private readonly PackageNameService? _packageNameService;
     private readonly PubSubService? _pubSubService;
-    private bool _isAutoScrollEnabled = false;
 
-    private DispatcherTimer _scrollDebounceTimer;
 
 
     public LogMonitoringPage()
@@ -54,24 +52,20 @@ public sealed partial class LogMonitoringPage
         DataContext = this;
         LogListView.Background = ColorManager.GetBrush("AppBackgroundColor");
 
-
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _logcatService = App.Services.GetService<LogcatService>();
         _logStorageService = App.Services.GetService<LogStorageService>();
-        _deviceService = App.Services.GetService<DeviceService>();
         _packageNameService = App.Services.GetService<PackageNameService>();
         _pubSubService = App.Services.GetService<PubSubService>();
 
-        LoadDevices();
         LoadPackages();
 
-        StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
-        StartStopToggleButton.IsEnabled = DeviceComboBox.SelectedIndex != -1;
-        ClearTimespanButton.Background = ColorManager.GetBrush("StopColor");
+        StartStopToggleButton.Foreground = ColorManager.GetBrush("StartColor");
 
         LogEntriesDisplay.CollectionChanged += LogEntriesDisplayCollectionChanged;
         _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+        _pubSubService?.Subscribe("DeviceSelected", OnSelectedDeviceReceived);
         _pubSubService?.Subscribe("PackageCacheInitialized", OnPackageCacheReceived);
     }
 
@@ -114,6 +108,12 @@ public sealed partial class LogMonitoringPage
         });
     }
 
+    private void OnSelectedDeviceReceived(object eventData)
+    {
+        SelectedDevice = eventData as DeviceInfo;
+        StartStopToggleButton.IsEnabled = SelectedDevice is not null;
+    }
+
     private void OnPackageCacheReceived(object eventData)
     {
         if (eventData is not Tuple<List<string>, List<string>> packageCache) return;
@@ -125,7 +125,10 @@ public sealed partial class LogMonitoringPage
     {
         try
         {
-            var selectedPackages = SelectedPackages.ToList().Any() ? SelectedPackages.ToList() : _availablePackages;
+            var selectedPackages = SelectedPackages.ToList().Count != 0
+                ? SelectedPackages.ToList()
+                : _availablePackages;
+
             if (_logStorageService == null) return;
 
             var logEntries = await _logStorageService.LoadLogEntriesIncludingPackagesAsync(selectedPackages);
@@ -159,26 +162,23 @@ public sealed partial class LogMonitoringPage
 
     private void ScrollToLatestItem()
     {
-        if (_scrollDebounceTimer == null)
+        _scrollDebounceTimer = new DispatcherTimer
         {
-            _scrollDebounceTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(200) // Set debounce delay
-            };
-            _scrollDebounceTimer.Tick += (s, e) =>
-            {
-                _scrollDebounceTimer.Stop();
+            Interval = TimeSpan.FromMilliseconds(200) // Set debounce delay
+        };
+        _scrollDebounceTimer.Tick += (s, e) =>
+        {
+            _scrollDebounceTimer.Stop();
 
-                // Perform the scroll operation
-                if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 0 && LogListView.Items.Count > 5)
+            // Perform the scroll operation
+            if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 0 && LogListView.Items.Count > 5)
+            {
+                _dispatcherQueue.TryEnqueue(() =>
                 {
-                    _dispatcherQueue.TryEnqueue(() =>
-                    {
-                        LogListView.ScrollIntoView(LogEntriesDisplay.Last());
-                    });
-                }
-            };
-        }
+                    LogListView.ScrollIntoView(LogEntriesDisplay.Last());
+                });
+            }
+        };
 
         // Restart the debounce timer on every call
         _scrollDebounceTimer.Stop();
@@ -190,52 +190,33 @@ public sealed partial class LogMonitoringPage
         if (_packageNameService != null) _availablePackages = _packageNameService.GetRunningPackages();
     }
 
-    private async void LoadDevices()
-    {
-        try
-        {
-            if (_deviceService == null) return;
-
-            DeviceComboBox.Items.Clear();
-
-            Console.WriteLine("Loading devices...");
-            var devices = await _deviceService.GetConnectedDevices();
-            foreach (var device in devices)
-            {
-                DeviceComboBox.Items.Add(device);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading devices: {ex.Message}");
-        }
-    }
-
     private void StartStopToggleButton_Checked(object sender, RoutedEventArgs e)
     {
-        if (DeviceComboBox.SelectedIndex < 0) return;
         StartStopIcon.Glyph = "\uE71A";
-        StartStopText.Text = "Stop";
-        StartStopToggleButton.Background = ColorManager.GetBrush("StopColor");
-        DeviceComboBox.IsEnabled = false;
-        LoadDeviceButton.IsEnabled = false;
+        StartStopToggleButton.Label = "Stop";
+        StartStopToggleButton.Foreground = ColorManager.GetBrush("StopColor");
         StartLogcat();
     }
 
     private void StartStopToggleButton_Unchecked(object sender, RoutedEventArgs e)
     {
         StartStopIcon.Glyph = "\uE768";
-        StartStopText.Text = "Start";
-        StartStopToggleButton.Background = ColorManager.GetBrush("StartColor");
-        DeviceComboBox.IsEnabled = true;
-        LoadDeviceButton.IsEnabled = true;
+        StartStopToggleButton.Label = "Start";
+        StartStopToggleButton.Foreground = ColorManager.GetBrush("StartColor");
         StopLogcat();
     }
 
     private async void StartLogcat()
     {
-        ClearLogs();
-        if (_logcatService != null) await _logcatService.StartLogcat(SelectedDevice);
+        try
+        {
+            ClearLogs();
+            await Task.Run(() => _logcatService?.StartLogcat(SelectedDevice.SerialNumber));
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error starting log cat: {e.Message} {e.StackTrace}");
+        }
     }
 
     private void StopLogcat()
@@ -251,19 +232,6 @@ public sealed partial class LogMonitoringPage
             LogListView.Items.Clear();
             LogEntriesDisplay.Clear();
         });
-    }
-
-
-    private void DeviceComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        StartStopToggleButton.IsEnabled = DeviceComboBox.SelectedIndex != -1;
-
-        if (DeviceComboBox.SelectedItem is not string selectedDevice) return;
-
-        Console.WriteLine($"Device selected: {selectedDevice}");
-        SelectedDevice = selectedDevice;
-        _pubSubService?.Publish("DeviceSelected", selectedDevice);
-        _packageDialog = null;
     }
 
     private void ShowPackages_Click(object sender, RoutedEventArgs e)
@@ -327,13 +295,6 @@ public sealed partial class LogMonitoringPage
         dialogContent.ClearAllCheckboxes(SelectedPackages);
     }
 
-    private void RefreshDevice_Click(object sender, RoutedEventArgs e)
-    {
-        if (!DeviceComboBox.IsEnabled) return;
-
-        LoadDevices();
-    }
-
     private void LogSearchBox_OnQuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
     {
         var query = LogSearchBox.Text.ToLower();
@@ -347,14 +308,15 @@ public sealed partial class LogMonitoringPage
 
     private void LogSearchBox_OnTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
-        var query = LogSearchBox.Text.ToLower();
-        if (LogSearchBox.Text.Length <= 0)
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput && string.IsNullOrEmpty(sender.Text))
         {
             ClearSearchResults();
             return;
-        };
-        HandleSearch(query);
+        }
+
+        HandleSearch(sender.Text.ToLower());
     }
+
 
     private void OnNextButtonClick(object sender, RoutedEventArgs _)
     {

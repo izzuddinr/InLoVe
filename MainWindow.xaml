@@ -9,26 +9,32 @@
                     PaneDisplayMode="Left"
                     IsBackEnabled="False"
                     IsBackButtonVisible="Collapsed"
-                    IsPaneOpen="False">
+                    IsPaneOpen="False"
+                    IsPaneToggleButtonVisible="False">
         <NavigationView.MenuItems>
-            <NavigationViewItem Content="Home" Tag="HomePage">
+            <NavigationViewItem Content="Home" Tag="HomePage" ToolTipService.ToolTip="Home Page">
                 <NavigationViewItem.Icon>
                     <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE80F;" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="Logcat" Tag="LogMonitoringPage">
+            <NavigationViewItem Content="Device" Tag="DevicePage" ToolTipService.ToolTip="Device Page">
                 <NavigationViewItem.Icon>
-                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE8FD;" />
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xEE64;" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="ISO8583 Message" Tag="Iso8583ParsingPage">
+            <NavigationViewItem Content="Logcat" Tag="LogMonitoringPage" ToolTipService.ToolTip="Logcat Page">
+                <NavigationViewItem.Icon>
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE8E4;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem Content="ISO8583 Message" Tag="Iso8583ParsingPage" ToolTipService.ToolTip="ISO8583 Log Page">
                 <NavigationViewItem.Icon>
                     <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xE715;" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="Host Record" Tag="HostRecordPage">
+            <NavigationViewItem Content="Host Record" Tag="HostRecordPage" ToolTipService.ToolTip="Host Record Page">
                 <NavigationViewItem.Icon>
-                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xEC27;" />
+                    <FontIcon FontFamily="{StaticResource FluentIconsFont}" Glyph="&#xEF58;" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
         </NavigationView.MenuItems>

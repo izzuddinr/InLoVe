@@ -3,21 +3,34 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel>
-        <TextBlock Text="Select packages to display logs for:" Margin="0,0,0,10"/>
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Select packages to display logs for:"
+                   Margin="0,0,0,10"/>
 
         <!-- Search TextBox for live search functionality -->
-        <TextBox x:Name="SearchTextBox"
+        <TextBox Grid.Row="1"
+                 x:Name="SearchTextBox"
                  PlaceholderText="Search packages..."
                  Margin="0,0,0,10"
                  TextChanged="SearchTextBox_TextChanged"/>
 
         <!-- ScrollViewer for the list of packages -->
-        <ScrollViewer x:Name="LogScrollViewer"
+        <ScrollViewer Grid.Row="2"
+                      x:Name="LogScrollViewer"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <Grid x:Name="PackageCheckboxGrid" Margin="0,0,0,10">
+            <Grid x:Name="PackageCheckboxGrid"
+                  Margin="0,0,0,10"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch">
             </Grid>
         </ScrollViewer>
-    </StackPanel>
+    </Grid>
 </Page>
