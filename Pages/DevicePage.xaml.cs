@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,13 @@ public sealed partial class DevicePage : Page
 
     private int _currentCommandIndex = -1;
 
+    private Dictionary<int, string> _commandTexts = new()
+    {
+        [-1] = "Enter command text (e.g. adb shell input text &quot;input_text&quot;)",
+        [0] = "Enter Text (e.g. 5012345678910)",
+        [1] = "Enter Filename (e.g. screenshot_1 => screenshot_1.png)",
+    };
+
     public DevicePage()
     {
         InitializeComponent();
@@ -36,6 +44,8 @@ public sealed partial class DevicePage : Page
 
         ContentGrid.Background = ColorManager.GetBrush(ApplicationColor.AppBackgroundColor.ToString());
         ConsoleHistoryListView.Background = new SolidColorBrush(Colors.Black);
+
+        DeviceCommandInputBox.PlaceholderText = _commandTexts[_currentCommandIndex];
 
         LoadDevices();
     }
@@ -86,7 +96,7 @@ public sealed partial class DevicePage : Page
         AddNewLog($"\"{command}\" sent to device.");
     }
 
-    private void DoScreenshot(string? filename = null)
+    private async void DoScreenshot(string? filename = null)
     {
         if (_deviceService == null || _currentDeviceInfo?.SerialNumber == null) return;
 
@@ -94,41 +104,15 @@ public sealed partial class DevicePage : Page
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var screenshotFileName = filename is null ? $"screenshot_{timestamp}.png" : $"{filename}.png";
         var devicePath = $"/sdcard/{screenshotFileName}";
-        var pcPath = $@"{Environment.CurrentDirectory}Screenshots\{screenshotFileName}";
+        var pcPath = $@"{Environment.CurrentDirectory}\Screenshots\{screenshotFileName}";
 
-        _deviceService.RunAdbCommand($"-s {serialNumber} shell screencap -p {devicePath}");
-        _deviceService.RunAdbCommand($"-s {serialNumber} pull {devicePath} {pcPath}");
-        _deviceService.RunAdbCommand($"-s {serialNumber} shell rm {devicePath}");
+        await _deviceService.RunAdbChainedCommands([
+            $"-s {serialNumber} shell screencap -p {devicePath}",
+            $"-s {serialNumber} pull {devicePath} {pcPath}",
+            $"-s {serialNumber} shell rm {devicePath}",
+        ]);
 
         AddNewLog($"Screenshot saved to {pcPath}");
-    }
-
-    private void DeviceCommandInputBox_OnQuerySubmitted(AutoSuggestBox sender,
-        AutoSuggestBoxQuerySubmittedEventArgs args)
-    {
-        try
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                sender.Text = string.Empty;
-
-                switch (_currentCommandIndex)
-                {
-                    case 0:
-                        DoSendTextInput($"shell input text \"{args.QueryText}\"");
-                        break;
-                    case 1:
-                        DoScreenshot(string.IsNullOrWhiteSpace(args.QueryText) ? null : args.QueryText);
-                        break;
-                    default:
-                        throw new InvalidOperationException("Invalid command index");
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error while processing query: {ex.Message}");
-        }
     }
 
     private void CommandButton_OnClick(object sender, RoutedEventArgs e)
@@ -136,18 +120,46 @@ public sealed partial class DevicePage : Page
         if (sender is not Button { Tag: string tag }) return;
 
         _currentCommandIndex = int.Parse(tag);
-        DeviceCommandInputBox.PlaceholderText = _currentCommandIndex switch
-        {
-            -1 => "Enter command text (e.g. adb shell input text \"input_text\")",
-            0 => "Enter Text (e.g. 5012345678910)",
-            1 => "Enter Filename (e.g. screenshot_1 => screenshot_1.png)",
-        };
+        DeviceCommandInputBox.PlaceholderText = _commandTexts[_currentCommandIndex];
     }
 
     private void DeviceGridView_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _currentDeviceInfo = (DeviceInfo)e.AddedItems[0];
         Console.WriteLine($"Current Device Info: {Environment.NewLine}{_currentDeviceInfo}");
+        AddNewLog($"{_currentDeviceInfo.SerialNumber} ({_currentDeviceInfo.Manufacturer} - {_currentDeviceInfo.Model}) selected.");
         _pubSubService?.Publish("DeviceSelected", _currentDeviceInfo);
+    }
+
+    private void ReloadButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        LoadDevices();
+    }
+
+    private void SendCommandButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var query = DeviceCommandInputBox.Text;
+        try
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                switch (_currentCommandIndex)
+                {
+                    case 0:
+                        DoSendTextInput($"shell input text \"{query}\"");
+                        break;
+                    case 1:
+                        DoScreenshot(string.IsNullOrWhiteSpace(query) ? null : query);
+                        break;
+                    default:
+                        throw new InvalidOperationException("Invalid command index");
+                }
+                DeviceCommandInputBox.Text = string.Empty;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while processing query: {ex.Message}");
+        }
     }
 }

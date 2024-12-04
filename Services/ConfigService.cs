@@ -41,7 +41,7 @@ namespace Qatalyst.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading CAPK dictionary from {fileName}: {ex.Message}");
-                return new List<CapkLabel>();
+                return [];
             }
         }
 
@@ -80,12 +80,12 @@ namespace Qatalyst.Services
             try
             {
                 var jsonString = LoadJsonFileToString(fileName);
-                return JsonConvert.DeserializeObject<List<RandomQ>>(jsonString) ?? new List<RandomQ>();
+                return JsonConvert.DeserializeObject<List<RandomQ>>(jsonString) ?? [];
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading Q dictionary from {fileName}: {ex.Message}");
-                return new List<RandomQ>();
+                return [];
             }
         }
         private static List<AppColor> LoadAppColors(string fileName)
@@ -98,7 +98,7 @@ namespace Qatalyst.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading Q dictionary from {fileName}: {ex.Message}");
-                return new List<AppColor>();
+                return [];
             }
         }
 

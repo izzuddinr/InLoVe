@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage.Pickers;
@@ -14,7 +15,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Qatalyst.Controls;
 using Qatalyst.Objects;
 using Qatalyst.Services;
@@ -33,9 +33,12 @@ public partial class Iso8583ParsingPage
     private readonly List<string> _currentMessageBuffer = [];
 
     private List<TreeView> _isoMsgTreeView = [];
+    private List<ISO8583Msg> _isoMsg = [];
     private SolidColorBrush receiptTextColor;
     private bool _isParsingMessage;
     private string _currentParsingType = string.Empty;
+    private Receipt? _currentReceipt = null;
+    private static string receiptPattern = """CommandProxy:dispatch:\d+ transactionResult = \{"linePrintData".*""";
     private CancellationTokenSource? _processingCancellationTokenSource;
 
     public Iso8583ParsingPage()
@@ -102,7 +105,7 @@ public partial class Iso8583ParsingPage
         }
     }
 
-    private (bool IsValidTag, bool IsValidMessage, string MessageType) GetLogType(LogEntry logEntry)
+    private (bool IsValidTag, bool IsValidMessage, string MessageType) GetParsingFlags(LogEntry logEntry)
     {
         if (_configService == null)
         {
@@ -122,7 +125,6 @@ public partial class Iso8583ParsingPage
 
         var messageType = isReceiptTag ? "RECEIPT_MSG" : "ISO_MSG";
 
-        // Final tag validity check
         var isValidTag = isTagValid && (isReceiptTag || isIsoTag);
 
         return (isValidTag, isMessageValid, messageType);
@@ -130,22 +132,30 @@ public partial class Iso8583ParsingPage
 
 
     private static bool ContainsValidKeywords(string message) =>
-        message.Contains("packRequest") ||
-        message.Contains("unpackResponse") ||
-        message.Contains("START PRINTING");
+        ContainsValidIsoMsgKeywords(message) ||
+        ContainsValidReceiptKeywords(message);
 
+    private static bool ContainsValidIsoMsgKeywords(string message) =>
+        message.Contains("packRequest") ||
+        message.Contains("unpackResponse");
+
+    private static bool ContainsValidReceiptKeywords(string message) =>
+        message.StartsWith("PrinterImpl:savePreview:") &&
+        message.Contains("savePreview: receipt:");
 
     private Task ProcessLogEntryAsync(LogEntry logEntry)
     {
         return Task.Run(() =>
         {
             var message = logEntry.Message;
-            var (isValidTag, isValidMessage, parsingType) = GetLogType(logEntry);
+            var (isValidTag, isValidMessage, parsingType) = GetParsingFlags(logEntry);
 
             var isValidParsingType = !string.IsNullOrEmpty(_currentParsingType)
                                      && _currentParsingType.Equals(parsingType);
             if (ShouldFinalizeMessage(parsingType, isValidParsingType, isValidTag, message))
             {
+                if (parsingType == "RECEIPT_MSG")
+                    _currentMessageBuffer.Add(message);
                 FinalizeCurrentMessage(parsingType);
                 return;
             }
@@ -176,7 +186,8 @@ public partial class Iso8583ParsingPage
             "RECEIPT_MSG" => _isParsingMessage
                              && isValidParsingType
                              && isValidTag
-                             && message.Contains("END PRINTING"),
+                             && (message.EndsWith("])])")
+                                 || (message.StartsWith("PrinterImpl:savePreview:") && message.Contains(" Result: "))),
             "ISO_MSG" => _isParsingMessage
                          && isValidParsingType
                          && ((isValidTag && !message.Contains('|')) || !isValidTag),
@@ -185,101 +196,52 @@ public partial class Iso8583ParsingPage
         return shouldFinalize;
     }
 
-
     private void FinalizeCurrentMessage(string parsingType = "ISO_MSG")
     {
-        if (_currentMessageBuffer.Count == 0) return;
+        if (_currentMessageBuffer.Count <= 0) return;
 
         var fullMessage = string.Join("\r\n", _currentMessageBuffer);
+
+        // if (_currentParsingType == "RECEIPT_MSG")
+        // {
+        //     Console.WriteLine(fullMessage);
+        //     Console.WriteLine(new string('-', 20));
+        // }
 
         switch (parsingType)
         {
             case "RECEIPT_MSG":
-                var receipt = ParseReceiptMessage();
-                _dispatcherQueue.TryEnqueue(() => AppendTextToView(receipt));
+                // Console.WriteLine($"_currentMessageBuffer = {_currentMessageBuffer.Count}");
+                var receipt = ReceiptParser.ParseFromJson(_currentMessageBuffer);
+                _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (receipt != null)
+                        {
+                            ReceiptUIHelper.PopulateReceiptStackPanel(
+                                receipt,
+                                ReceiptStackPanel
+                            );
+                        }
+                    }
+                );
+                Console.WriteLine("Finished receipt processing.");
                 break;
             case "ISO_MSG":
                 var isoMsg = Iso8583Parser.ParseIsoMessage(fullMessage);
                 _dispatcherQueue.TryEnqueue(() => AddMessageToTreeView(isoMsg));
+                Console.WriteLine("Finished ISO Msg processing.");
                 break;
         }
+
+        ResetParsingState();
+    }
+
+    private void ResetParsingState()
+    {
         _currentMessageBuffer.Clear();
         _isParsingMessage = false;
         _currentParsingType = string.Empty;
     }
-
-    private List<string> ParseReceiptMessage()
-    {
-        var separator = Enumerable.Repeat(Environment.NewLine, 3).ToList();
-        var formattedReceipt = new List<string>();
-        var totalWidth = 20;
-
-        foreach (var uLine in _currentMessageBuffer
-                     .Where(line => !line.Contains("PrinterImpl"))
-                     .Select(line => line.StartsWith("\t*") ? line.Substring(1) : line))
-        {
-            if (!uLine.Contains('\t') || uLine.Length >= totalWidth)
-            {
-                formattedReceipt.Add(uLine);
-                continue;
-            }
-
-            var columns = uLine.Split("\t", StringSplitOptions.RemoveEmptyEntries);
-
-            switch (columns.Length)
-            {
-                case 1:
-                    formattedReceipt.Add(CenterAlign(columns[0], totalWidth));
-                    break;
-
-                case 2:
-                    formattedReceipt.Add(AlignTwoColumns(columns[0], columns[1], totalWidth));
-                    break;
-
-                case 3:
-                    formattedReceipt.Add(AlignThreeColumns(columns, totalWidth));
-                    break;
-
-                default:
-                    formattedReceipt.Add(uLine);
-                    break;
-            }
-        }
-
-        return formattedReceipt.Concat(separator).ToList();
-    }
-
-    private static string CenterAlign(string text, int totalWidth)
-    {
-        var spaceCount = totalWidth - text.Length;
-        if (spaceCount <= 0) return text;
-
-        var leftPad = spaceCount / 2;
-        var rightPad = spaceCount - leftPad;
-        return $"{new string(' ', leftPad)}{text}{new string(' ', rightPad)}";
-    }
-
-    private static string AlignTwoColumns(string left, string right, int totalWidth)
-    {
-        var spaceCount = totalWidth - (left.Length + right.Length);
-        if (spaceCount < 0) spaceCount = 0; // Prevent negative spaces
-        return $"{left}{new string(' ', spaceCount)}{right}";
-    }
-
-    private static string AlignThreeColumns(string[] columns, int totalWidth)
-    {
-        if (columns.Length != 3) return string.Join(" ", columns);
-
-        var usedWidth = columns[0].Length + columns[1].Length + columns[2].Length;
-        var spaceCount = totalWidth - usedWidth;
-        if (spaceCount < 0) spaceCount = 0; // Prevent negative spaces
-
-        var leftSpace = spaceCount / 2;
-        var rightSpace = spaceCount - leftSpace;
-
-        return $"{columns[0]}{new string(' ', leftSpace)}{columns[1]}{new string(' ', rightSpace)}{columns[2]}";
-    }
-
 
     private void AddMessageToTreeView(ISO8583Msg isoMsg)
     {
@@ -343,6 +305,7 @@ public partial class Iso8583ParsingPage
         newTreeView.RootNodes.Add(rootNode);
 
         _isoMsgTreeView.Add(newTreeView);
+        _isoMsg.Add(isoMsg);
 
         // Add the TreeView dynamically to the ScrollViewer
         if (IsoMsgScrollViewer.Content is StackPanel stackPanel)
@@ -493,71 +456,27 @@ public partial class Iso8583ParsingPage
 
         try
         {
-            var jsonObj = new JObject();
-
-            // Extract data from the TreeView nodes
-            foreach (var rootNode in _isoMsgTreeView.Select(view => view.RootNodes.FirstOrDefault()))
-            {
-                if (rootNode == null || rootNode.Content is not CustomTreeViewContent rootNodeContent) continue;
-                ProcessChildNodeToJson(jsonObj, rootNodeContent.Value, rootNode);
-            }
-
-            await ExportToJsonFileAsync(jsonObj, fileName);
-
-            Console.WriteLine($"JSON exported successfully to {fileName}");
+            await ExportToJsonFile(fileName);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error exporting JSON: {ex.Message}");
         }
+
     }
 
-    private void ProcessChildNodeToJson(JObject parentJson, string key, TreeViewNode node)
+    private Task ExportToJsonFile(string filePath)
     {
-        var jArray = new JArray();
+        var isoMsgs = _isoMsg.ToList();
 
-        foreach (var childNode in node.Children)
-        {
-            if (childNode?.Content is not CustomTreeViewContent childNodeContent)
-                continue;
+        // Serialize the filtered entries to JSON
+        var jsonContent = JsonConvert.SerializeObject(isoMsgs, Formatting.Indented);
 
-            if (!childNode.HasChildren)
-            {
-                jArray.Add(childNodeContent.Value);
-            }
-            else if (childNode.Children.Count == 1)
-            {
-                if (childNode.Children.FirstOrDefault()?.Content is not CustomTreeViewContent subChildContent) continue;
-                jArray.Add($"{childNodeContent.Value} {subChildContent.Value}");
-            }
-            else
-            {
-                // Recursively process child nodes and collect their values
-                var childValues = childNode.Children
-                    .Where(x => x.Content is CustomTreeViewContent)
-                    .Select(x => ((CustomTreeViewContent)x.Content).Value);
+        // Write the JSON content to the specified file
+        File.WriteAllText(filePath, jsonContent);
 
-                jArray.Add(new JArray(childValues));
-            }
-        }
-        parentJson[key] = jArray;
+        return Task.CompletedTask;
     }
-
-    public static async Task ExportToJsonFileAsync(JObject jsonObject, string filePath)
-    {
-        Formatting formatting = Formatting.Indented;
-        try
-        {
-            await using var writer = new StreamWriter(filePath);
-            await using var jsonWriter = new JsonTextWriter(writer) { Formatting = formatting };
-            await jsonObject.WriteToAsync(jsonWriter);
-        }
-        catch (Exception ex)
-        {
-            throw new IOException("Failed to export JSON.", ex);
-        }
-    }
-
 
     private void AppendTextToView(List<string> input)
     {
@@ -577,4 +496,34 @@ public partial class Iso8583ParsingPage
         }
     }
 
+    private async void ImportReceiptButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var openPicker = new FileOpenPicker
+            {
+                FileTypeFilter = { ".txt" },
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                ViewMode = PickerViewMode.List,
+            };
+            var window = App.MainAppWindow;
+
+            var hWnd = WindowNative.GetWindowHandle(window);
+
+            InitializeWithWindow.Initialize(openPicker, hWnd);
+
+            var file = await openPicker.PickSingleFileAsync();
+            var fileContents = File.ReadAllLines(file.Path);
+
+            var receipt = ReceiptParser.ParseFromJson(fileContents.ToList());
+            ReceiptUIHelper.PopulateReceiptStackPanel(receipt, ReceiptStackPanel);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error reading file: " + ex.Message);
+        }
+    }
+
+    [GeneratedRegex(@"(?=.*APP_PRINT)(?=.*\]\)\]\))")]
+    private static partial Regex LinePrintingEndRegex();
 }

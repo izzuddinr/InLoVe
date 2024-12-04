@@ -16,11 +16,11 @@ public class AdbProcessManager : IDisposable
 
     public void KillAllManagedProcesses()
     {
-        foreach (var process in _managedProcesses.Values.ToList())
+        foreach (var process in _managedProcesses.Values)
         {
             try
             {
-                if (process.HasExited) continue;
+                if (process == null || process.HasExited) continue;
 
                 Console.WriteLine($"Error killing process - name: {process.ProcessName} | id: {process.Id}");
                 process.Kill();

@@ -17,7 +17,7 @@ public partial class LogEntry : INotifyPropertyChanged
     public string? PackageName { get; set; }
     public SolidColorBrush TextBrush { get; set; }
     public bool IsChecked { get; set; } = false;
-    public bool IsValid { get; set; }
+    public bool IsValid { get; set; } = true;
 
 
     private SolidColorBrush _backgroundBrush;

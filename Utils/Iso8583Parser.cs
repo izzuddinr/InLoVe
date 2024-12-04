@@ -97,7 +97,7 @@ public static class Iso8583Parser
 
             if (!asciiFields.Contains(data.Key)) continue;
 
-            isoMsg.ChangeDataElement(data.Key, length,  values.Select(HexToString).ToList());
+            isoMsg.ChangeDataElement(data.Key, length, values.Select(HexToString).ToList());
         }
     }
 

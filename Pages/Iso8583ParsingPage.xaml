@@ -14,7 +14,12 @@
     </Page.Resources>
 
     <Grid x:Name="MainGrid" Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -25,49 +30,97 @@
             Text="ISO8583 Messages"
             FontSize="24"
             Margin="10"
-            Grid.Row="0" />
+            Grid.Column="0" Grid.Row="0" />
 
-        <Grid Grid.Row="1" x:Name="ChildGrid" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0"
+                   Grid.Row="1"
+                   Text="ISO8583 Messages"
+                   FontSize="18"
+                   Margin="10"
+                   HorizontalAlignment="Stretch"
+                   HorizontalTextAlignment="Center"
+                   VerticalAlignment="Center"/>
 
-            <!-- ScrollViewer with TreeView -->
-            <ScrollViewer
-                Grid.Column="0"
-                x:Name="IsoMsgScrollViewer"
-                Margin="0,0,5, 0"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Auto">
-                <muxc:TreeView x:Name="IsoMsgTreeView" FontFamily="Consolas" FontSize="12"/>
-            </ScrollViewer>
+        <TextBlock Grid.Column="1"
+                   Grid.Row="1"
+                   Text="Receipts"
+                   FontSize="18"
+                   Margin="10"
+                   HorizontalAlignment="Stretch"
+                   HorizontalTextAlignment="Center"
+                   VerticalAlignment="Center"/>
 
-            <!-- ScrollViewer with TreeView -->
-            <ScrollViewer
-                Grid.Column="1"
-                x:Name="ReceiptScrollViewer"
-                Margin="5,0,0, 0"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Auto">
-                <RichTextBlock x:Name="ReceiptTextBlock"
-                               Padding="25, 5"
-                               FontFamily="Consolas"
-                               FontSize="14"
-                               IsTextSelectionEnabled="True">
-                    <Paragraph>
-                        <Run Text="" />
-                    </Paragraph>
-                </RichTextBlock>
-            </ScrollViewer>
-        </Grid>
+        <ScrollViewer Grid.Column="0"
+                      Grid.Row="2"
+                      x:Name="IsoMsgScrollViewer"
+                      Margin="0,0,5, 0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto">
+            <muxc:TreeView x:Name="IsoMsgTreeView" FontFamily="Consolas" FontSize="12" />
+        </ScrollViewer>
 
-        <Button x:Name="ExportIsoMsgLogButton"
+        <!-- ScrollViewer with TreeView -->
+        <ScrollViewer Grid.Column="1"
+                      Grid.Row="2"
+                      x:Name="ReceiptScrollViewer2"
+                      Margin="5,0,0, 0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      Visibility="Collapsed">
+            <RichTextBlock x:Name="ReceiptTextBlock"
+                           Padding="25, 5"
+                           FontFamily="Consolas"
+                           FontSize="14"
+                           IsTextSelectionEnabled="True">
+                <Paragraph>
+                    <Run Text="" />
+                </Paragraph>
+            </RichTextBlock>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Column="1"
+                      Grid.Row="2"
+                      x:Name="ReceiptScrollViewer"
+                      Background="#FCFCFC"
+                      Margin="0,0,0, 0"
+                      Padding="40,0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Visibility="Visible">
+            <StackPanel x:Name="ReceiptStackPanel"
+                        Orientation="Vertical"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0, 10">
+                <TextBlock x:Name="ReferenceTextBlock"
+                           Text="--------------------"
+                           Foreground="#FCFCFC"
+                           FontFamily="Consolas"
+                           FontSize="14"
+                           Visibility="Visible" />
+
+            </StackPanel>
+        </ScrollViewer>
+
+
+        <Button Grid.Column="0"
+                Grid.Row="3"
+                x:Name="ExportIsoMsgLogButton"
                 Margin="0, 10"
                 HorizontalAlignment="Stretch"
-                Click="ExportIsoMsgLogButton_OnClick"
-                Grid.Row="2" >
+                Click="ExportIsoMsgLogButton_OnClick" >
             Export ISO8583 Messages to JSON File
+        </Button>
+
+        <Button Grid.Column="1"
+                Grid.Row="3"
+                x:Name="ImportReceiptButton"
+                Margin="0, 10"
+                HorizontalAlignment="Stretch"
+                Click="ImportReceiptButton_OnClick" >
+            ImportReceiptFile
         </Button>
     </Grid>
 </Page>

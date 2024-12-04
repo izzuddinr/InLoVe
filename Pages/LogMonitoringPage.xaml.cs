@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -11,10 +15,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using Newtonsoft.Json;
 using Qatalyst.Objects;
 using Qatalyst.Services;
 using Qatalyst.Utils;
-
+using WinRT.Interop;
 namespace Qatalyst.Pages;
 
 public sealed partial class LogMonitoringPage
@@ -222,8 +227,12 @@ public sealed partial class LogMonitoringPage
             StopLogcat();
     }
 
-    private void StartStopToggleButton_Unchecked(object sender, RoutedEventArgs e)
+    private async Task StartLogcat(StorageFile file)
     {
+        ClearLogs();
+        if (_logcatService == null) return;
+
+        await Task.Run(() => { _ = _logcatService.StartLogcat(file); });
     }
 
     private async void StartLogcat(string serialNumber)
@@ -360,7 +369,7 @@ public sealed partial class LogMonitoringPage
 
     private void UpdateButtonStates()
     {
-        var hasResults = _searchResults.Any();
+        var hasResults = _searchResults.Count != 0;
         PrevResultButton.IsEnabled = hasResults;
         NextResultButton.IsEnabled = hasResults;
         if (AutoScrollToggleButton.IsChecked == true && hasResults)
@@ -374,8 +383,8 @@ public sealed partial class LogMonitoringPage
         ClearSearchResults();
         _currentResultIndex = -1;
 
-        var isQuoted = (query.StartsWith("'") && query.EndsWith("'")) ||
-                       (query.StartsWith("\"") && query.EndsWith("\""));
+        var isQuoted = (query.StartsWith('\'') && query.EndsWith('\'')) ||
+                       (query.StartsWith('\"') && query.EndsWith('\"'));
         if (isQuoted)
         {
             query = query.Substring(1, query.Length - 2);
@@ -416,7 +425,7 @@ public sealed partial class LogMonitoringPage
             _searchResults.Add(index);
         }
 
-        if (_searchResults.Any())
+        if (_searchResults.Count != 0)
         {
             _currentResultIndex = 0;
             ScrollToResult(_searchResults[_currentResultIndex]);
@@ -529,5 +538,168 @@ public sealed partial class LogMonitoringPage
             }
             FindTimespanButton(child, out button);
         }
+    }
+
+    private async void ExportButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is not AppBarButton button) return;
+            var isUnfilteredExport = button.Tag.ToString() == "UNFILTERED_EXPORT";
+            var isJsonFormat = button.Name switch
+            {
+                var name when name == ExportJsonButton.Name => true,
+                var name when name == ExportUnfilteredJsonButton.Name => true,
+                var name when name == ExportFormattedButton.Name => false,
+                var name when name == ExportUnfilteredFormattedButton.Name => false,
+                _ => false
+            };
+
+            var defaultFileExtension = isJsonFormat ? ".logcat" : ".txt";
+            var suggestedFileName = (isUnfilteredExport ? "LOGCAT_UNFILTERED" : "LOGCAT_")
+                                    + DateTime.Now.ToString("yyyyMMddHHmmss")
+                                    + defaultFileExtension;
+
+
+            var savePicker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = suggestedFileName,
+                DefaultFileExtension = defaultFileExtension,
+            };
+
+            // Add file types to save picker
+            savePicker.FileTypeChoices.Add("logcat File", new List<string> { defaultFileExtension });
+
+            var window = App.MainAppWindow;
+            var hWnd = WindowNative.GetWindowHandle(window);
+            InitializeWithWindow.Initialize(savePicker, hWnd);
+
+            var file = await savePicker.PickSaveFileAsync();
+
+            if (file != null)
+            {
+                if (isUnfilteredExport && _logStorageService != null)
+                    await _logStorageService.ExportFile(file.Path, isJsonFormat);
+                else
+                    await ExportFile(file.Path, isJsonFormat);
+
+                Console.WriteLine("File saved successfully.");
+
+                // Show confirmation dialog
+                var dialog = new ContentDialog
+                {
+                    Title = "Export Successful",
+                    Content =
+                        "The file has been saved successfully. Do you want to open the directory where the file was exported?",
+                    PrimaryButtonText = "Yes",
+                    CloseButtonText = "No",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = App.MainAppWindow.Content.XamlRoot // Ensure correct XamlRoot for ContentDialog
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // Open the directory containing the file
+                    var folderPath = Path.GetDirectoryName(file.Path);
+                    if (folderPath != null)
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = folderPath,
+                            UseShellExecute = true
+                        });
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Save operation was cancelled.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving file: " + ex.Message);
+        }
+    }
+
+    private async void ImportButton_OnClick(object sender, RoutedEventArgs e)
+    {try
+        {
+            var openPicker = new FileOpenPicker
+            {
+                FileTypeFilter = { ".logcat" },
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                ViewMode = PickerViewMode.List,
+            };
+            var window = App.MainAppWindow;
+
+            var hWnd = WindowNative.GetWindowHandle(window);
+
+            InitializeWithWindow.Initialize(openPicker, hWnd);
+
+            var file = await openPicker.PickSingleFileAsync();
+
+            StartLogcat(file);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error reading file: " + ex.Message);
+        }
+        await Task.Run(() =>
+        {
+
+        });
+    }
+
+
+    private Task ExportFile(string filePath, bool isJsonFormat)
+    {
+        if (isJsonFormat)
+            ExportToJsonFile(filePath);
+        else
+            ExportToTxtFile(filePath);
+
+        return Task.CompletedTask;
+    }
+
+    private Task ExportToJsonFile(string filePath)
+    {
+        var logEntries = LogEntriesDisplay.ToList();
+        var filteredEntries = logEntries.Select(entry => new
+        {
+            entry.Id,
+            entry.Date,
+            entry.Time,
+            entry.ProcessId,
+            entry.ThreadId,
+            entry.Level,
+            entry.Tag,
+            entry.Message,
+            entry.PackageName
+        });
+
+        // Serialize the filtered entries to JSON
+        var jsonContent = JsonConvert.SerializeObject(filteredEntries, Formatting.Indented);
+
+        // Write the JSON content to the specified file
+        File.WriteAllText(filePath, jsonContent);
+
+        return Task.CompletedTask;
+    }
+
+    private Task ExportToTxtFile(string filePath)
+    {
+        var logEntries = LogEntriesDisplay.ToList();
+
+        // Extract the FormattedEntry of each LogEntry
+        var formattedEntries = logEntries.Select(entry => entry.FormattedEntry);
+
+        // Write all formatted entries to the file, each on a new line
+        File.WriteAllLines(filePath, formattedEntries);
+
+        return Task.CompletedTask;
     }
 }

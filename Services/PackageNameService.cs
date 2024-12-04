@@ -80,7 +80,7 @@ public class PackageNameService
 
     private readonly PubSubService _pubSubService;
 
-        private readonly Dictionary<string, string> _packageCache = new();
+        private  Dictionary<string, string> _packageCache = new();
 
         public PackageNameService()
         {
@@ -102,6 +102,14 @@ public class PackageNameService
             }
         }
 
+        public Task BuildPackageNameCacheFromFile(Dictionary<string, string> packageCache)
+        {
+            _packageCache = packageCache;
+            _pubSubService.Publish("PackageCacheInitialized",
+                new Tuple<List<string>, List<string>>(GetRunningPackages(), GetDefaultPackage()));
+
+            return Task.CompletedTask;
+        }
 
         private async Task BuildPackageNameCacheAsync(DeviceInfo? deviceInfo)
         {
@@ -163,7 +171,6 @@ public class PackageNameService
 
             return filteredPackages;
         }
-
 
         public string GetPackageName(string processId)
         {

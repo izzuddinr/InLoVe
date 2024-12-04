@@ -49,15 +49,22 @@
 
             <Grid Grid.Row="1" Margin="10, 0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="LogBufferSize"
+                <TextBlock x:Name="SelectedDeviceLabel"
                            FontFamily="Consolas"
                            FontSize="12"
                            VerticalAlignment="Center"
-                           Text=""
+                           Text="Selected Device: "
                            Grid.Column="0"/>
+                <TextBlock x:Name="SelectedDeviceText"
+                           FontFamily="Consolas"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Text="-"
+                           Grid.Column="1"/>
                 <StackPanel Orientation="Vertical"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right"

@@ -7,8 +7,6 @@ public class ISO8583Msg(string? messageType = null)
     public string MessageType { get; set; } = messageType ?? string.Empty;
     public string Bitmap { get; set; } = string.Empty;
 
-    public string RawMsg { get; set; } = string.Empty;
-
     public Dictionary<int, ISO8583DataElement> DataElements = [];
 
 
@@ -23,6 +21,7 @@ public class ISO8583Msg(string? messageType = null)
         if (DataElements.TryGetValue(field, out var iso8583DataElement))
         {
             iso8583DataElement.Length = length;
+            iso8583DataElement.RawData = iso8583DataElement.Value;
             iso8583DataElement.Value = value;
         }
         else

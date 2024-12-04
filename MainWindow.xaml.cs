@@ -5,15 +5,17 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Qatalyst.Objects;
 using Qatalyst.Services;
 
 namespace Qatalyst;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly LogStorageService _logStorageService = App.Services.GetRequiredService<LogStorageService>();
 
-    private readonly Dictionary<string, Frame> _pageFrames = new Dictionary<string, Frame>();
+    private readonly LogStorageService _logStorageService = App.Services.GetRequiredService<LogStorageService>();
+    private readonly Dictionary<string, Frame> _pageFrames = new();
+    private readonly PubSubService _pubSubService = App.Services.GetRequiredService<PubSubService>();
 
     private DispatcherTimer _memoryUpdateTimer;
 
@@ -34,8 +36,15 @@ public sealed partial class MainWindow : Window
         _pageFrames["HostRecordPage"] = CreateFrame(typeof(Pages.HostRecordPage));
 
         ContentPresenter.Content = _pageFrames["HomePage"];
-
+        _pubSubService?.Subscribe("DeviceSelected", OnSelectedDeviceReceived);
         Closed += OnWindowClosed;
+    }
+
+    private void OnSelectedDeviceReceived(object eventData)
+    {
+        if (eventData is not DeviceInfo deviceInfo) return;
+
+        SelectedDeviceText.Text = $"{deviceInfo.SerialNumber} ({deviceInfo.Manufacturer} - {deviceInfo.Model})" ?? "-";
     }
 
     private void InitializeDirectories()

@@ -225,6 +225,49 @@
                     <FontIcon x:Name="StartStopIcon" Glyph="&#xE768;"></FontIcon>
                 </AppBarButton.Icon>
             </AppBarButton>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton x:Name="ExportJsonButton"
+                              Icon="Save"
+                              Label="Export Logcat (JSON)"
+                              Tag="FILTERED_EXPORT"
+                              Click="ExportButton_OnClick">
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="S" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarButton x:Name="ExportFormattedButton"
+                              Icon="Save"
+                              Label="Export Logcat (TXT)"
+                              Tag="FILTERED_EXPORT"
+                              Click="ExportButton_OnClick">
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control,Menu" Key="S" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarSeparator/>
+                <AppBarButton x:Name="ExportUnfilteredJsonButton"
+                              Icon="Save"
+                              Label="Export ALL Logcat (JSON)"
+                              Tag="UNFILTERED_EXPORT"
+                              Click="ExportButton_OnClick">
+                </AppBarButton>
+                <AppBarButton x:Name="ExportUnfilteredFormattedButton"
+                              Icon="Save"
+                              Label="Export ALL Logcat (TXT)"
+                              Tag="UNFILTERED_EXPORT"
+                              Click="ExportButton_OnClick">
+                </AppBarButton>
+                <AppBarSeparator/>
+                <AppBarButton x:Name="ImportJsonButton"
+                              Icon="Save"
+                              Label="Import Logcat (JSON)"
+                              Tag="FILTERED_EXPORT"
+                              Click="ImportButton_OnClick">
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="S" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+            </CommandBar.SecondaryCommands>
         </CommandBar>
 
         <!-- ListView for log entries -->

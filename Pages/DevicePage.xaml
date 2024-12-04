@@ -135,7 +135,8 @@
                 Grid.Row="2"
                 Margin="10"
                 HorizontalAlignment="Stretch"
-                VerticalAlignment="Center">
+                VerticalAlignment="Center"
+                Click="ReloadButton_OnClick">
                 <StackPanel
                     Orientation="Horizontal"
                     HorizontalAlignment="Stretch"
@@ -184,6 +185,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <CommandBar Grid.Column="0"
@@ -209,19 +211,34 @@
                         </AppBarButton.KeyboardAccelerators>
                     </AppBarButton>
                 </CommandBar>
-
                 <AutoSuggestBox x:Name="DeviceCommandInputBox"
                                 Grid.Column="1"
+                                Background="#323135"
                                 FontFamily="{StaticResource JetbrainsMono}"
                                 FontSize="13"
-                                QueryIcon="Send"
                                 CornerRadius="0"
-                                Margin="0"
+                                Margin="0,0,0,1"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 VerticalContentAlignment="Center"
-                                PlaceholderText="Enter command text (e.g. adb shell input text &quot;input_text&quot;)"
-                                QuerySubmitted="DeviceCommandInputBox_OnQuerySubmitted"/>
+                                PlaceholderText="">
+                </AutoSuggestBox>
+                <CommandBar Grid.Column="2"
+                            Background="#323135"
+                            IsOpen="False"
+                            DefaultLabelPosition="Right">
+                    <AppBarButton x:Name="SendCommandButton"
+                                  Label="Send"
+                                  Background="#FF0A7BA4"
+                                  Click="SendCommandButton_OnClick">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE725;" />
+                        </AppBarButton.Icon>
+                        <AppBarButton.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Enter" Modifiers="Control"/>
+                        </AppBarButton.KeyboardAccelerators>
+                    </AppBarButton>
+                </CommandBar>
             </Grid>
         </Grid>
     </Grid>
