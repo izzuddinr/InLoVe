@@ -71,14 +71,17 @@ public class LogcatService
             {
                 var logEntries = await ReadLogEntriesFromJsonAsync(file);
 
-                // Filter entries where ProcessId and PackageName are not null or empty
                 var validEntries = logEntries
                     .Where(entry => !string.IsNullOrEmpty(entry.ProcessId) && !string.IsNullOrEmpty(entry.PackageName));
 
-                // Create a dictionary with ProcessId as the key and PackageName as the value
-                var packageCache = validEntries
-                    .GroupBy(entry => entry.ProcessId) // Group by ProcessId to ensure uniqueness
-                    .ToDictionary(group => group.Key, group => group.First().PackageName);
+                var packageCache = new Dictionary<string, string>();
+                foreach (var entries in validEntries.GroupBy(entry => entry.ProcessId))
+                    if (entries.Key != null)
+                    {
+                        var packageName = entries.First().PackageName;
+                        if (packageName != null)
+                            packageCache.Add(entries.Key, packageName);
+                    }
 
                 _packageNameService?.BuildPackageNameCacheFromFile(packageCache);
 
@@ -96,7 +99,7 @@ public class LogcatService
         });
     }
 
-    public static async Task<List<LogEntry>> ReadLogEntriesFromJsonAsync(StorageFile file)
+    private static async Task<List<LogEntry>> ReadLogEntriesFromJsonAsync(StorageFile file)
     {
         var jsonContent = await FileIO.ReadTextAsync(file);
         return JsonConvert.DeserializeObject<List<LogEntry>>(jsonContent) ?? [];
@@ -116,7 +119,7 @@ public class LogcatService
         Console.WriteLine("Logcat process stopped.");
     }
 
-    private async Task SetAdbLogcatBuffer(string device)
+    private static async Task SetAdbLogcatBuffer(string device)
     {
         Console.WriteLine($"Setting logcat buffer size for device {device}.");
 
@@ -129,7 +132,7 @@ public class LogcatService
         Console.WriteLine("Logcat buffer size set to 32Mb.");
     }
 
-    private async Task ClearLogcatBuffer(string device)
+    private static async Task ClearLogcatBuffer(string device)
     {
         Console.WriteLine($"Clearing logcat buffer for device {device}.");
 

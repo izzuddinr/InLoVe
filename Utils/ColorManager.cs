@@ -10,6 +10,8 @@ namespace Qatalyst.Utils;
 public static class ColorManager
 {
     private static readonly Dictionary<string, string> ColorCache = new();
+    private const string DefaultHexColorBlack = "#000000";
+    private const string DefaultHexColorWhite = "#FFFFFF";
 
     static ColorManager()
     {
@@ -21,13 +23,9 @@ public static class ColorManager
         try
         {
             // Check if the name exists in the ColorCache
-            if (ColorCache.TryGetValue(nameOrHexColor, out var hexColor))
-            {
-                return CreateBrushFromHexCode(hexColor);
-            }
+            return CreateBrushFromHexCode(ColorCache.GetValueOrDefault(nameOrHexColor, DefaultHexColorWhite));
 
             // If not found, assume it's a hex code and create the brush dynamically
-            return CreateBrushFromHexCode(nameOrHexColor);
         }
         catch (Exception e)
         {
@@ -40,13 +38,9 @@ public static class ColorManager
         try
         {
             // Check if the name exists in the ColorCache
-            if (ColorCache.TryGetValue(nameOrHexColor, out var hexColor))
-            {
-                return CreateColorFromHexCode(hexColor);
-            }
+            return CreateColorFromHexCode(ColorCache.GetValueOrDefault(nameOrHexColor, DefaultHexColorWhite));
 
             // If not found, assume it's a hex code and create the color dynamically
-            return CreateColorFromHexCode(nameOrHexColor);
         }
         catch (Exception e)
         {

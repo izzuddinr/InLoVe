@@ -24,14 +24,11 @@ using Qatalyst.Utils;
 using WinRT.Interop;
 namespace Qatalyst.Pages;
 
-public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
+public sealed partial class LogMonitoringPage : INotifyPropertyChanged
 {
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string DisplayedEntryCountValue
-    {
-        get => LogEntriesDisplay.Count.ToString();
-    }
+    public string DisplayedEntryCountValue => LogEntriesDisplay.Count.ToString();
 
     private ObservableCollection<LogEntry> LogEntriesDisplay { get; } = [];
     private ObservableCollection<string> SelectedPackages { get; set; } = [];
@@ -54,7 +51,6 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
     private readonly LogcatService? _logcatService;
     private readonly LogStorageService? _logStorageService;
     private readonly PackageNameService? _packageNameService;
-    private readonly PubSubService? _pubSubService;
 
     public LogMonitoringPage()
     {
@@ -67,17 +63,17 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
         _logcatService = App.Services.GetService<LogcatService>();
         _logStorageService = App.Services.GetService<LogStorageService>();
         _packageNameService = App.Services.GetService<PackageNameService>();
-        _pubSubService = App.Services.GetService<PubSubService>();
+        var pubSubService = App.Services.GetService<PubSubService>();
 
         LoadPackages();
 
         StartStopToggleButton.Foreground = ColorManager.GetBrush("StartColor");
 
         LogEntriesDisplay.CollectionChanged += LogEntriesDisplayCollectionChanged;
-        _pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
-        _pubSubService?.Subscribe("LogEntryCount", OnLogEntryCountReceived);
-        _pubSubService?.Subscribe("DeviceSelected", OnSelectedDeviceReceived);
-        _pubSubService?.Subscribe("PackageCacheInitialized", OnPackageCacheReceived);
+        pubSubService?.Subscribe("LogEntrySaved", OnLogEntryReceived);
+        pubSubService?.Subscribe("LogEntryCount", OnLogEntryCountReceived);
+        pubSubService?.Subscribe("DeviceSelected", OnSelectedDeviceReceived);
+        pubSubService?.Subscribe("PackageCacheInitialized", OnPackageCacheReceived);
     }
 
     private void LogEntriesDisplayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -89,22 +85,19 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
 
     private void OnLogEntryReceived(object eventData)
     {
-        var logEntry = eventData as LogEntry;
+        if (eventData is not LogEntry { IsValid: true } logEntry) return;
 
-        if (logEntry is { IsValid: false }) return;
-
-        if (SelectedPackages.Any() && !SelectedPackages.Contains(logEntry?.PackageName ?? string.Empty))
+        if (SelectedPackages.Any() && !SelectedPackages.Contains(logEntry.PackageName ?? string.Empty))
             return;
 
         _dispatcherQueue.TryEnqueue(() =>
         {
-            if (logEntry == null) return;
-
             logEntry.GetColorForLogLevel();
             LogEntriesDisplay.Add(logEntry);
             _ = ScrollToLatestItemAsync();
         });
     }
+
 
     private void OnLogEntryCountReceived(object eventData) =>
         _dispatcherQueue.TryEnqueue(() => AllEntryCount.Text = (string)eventData);
@@ -122,7 +115,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
         SelectedPackages = new ObservableCollection<string>(packageCache.Item2);
     }
 
-    private async Task  LoadLogEntriesIncludingPackages()
+    private async Task LoadLogEntriesIncludingPackages()
     {
         try
         {
@@ -164,28 +157,28 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
     {
         if (_scrollDebounceTimer != null)
             _scrollDebounceTimer.Stop();
-
-        _scrollDebounceTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(200) // Set debounce delay
-        };
-
-        _scrollDebounceTimer.Tick += (s, e) =>
-        {
-            _scrollDebounceTimer.Stop();
-            if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 5)
+        else
+            _scrollDebounceTimer = new DispatcherTimer
             {
-                _dispatcherQueue.TryEnqueue(() =>
-                {
-                    LogListView.ScrollIntoView(LogEntriesDisplay.Last());
-                });
-            }
-        };
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
 
-        // Restart the debounce timer on every call
-        _scrollDebounceTimer.Stop();
+        _scrollDebounceTimer.Tick -= ScrollDebounceTimer_Tick; // Prevent multiple subscriptions
+        _scrollDebounceTimer.Tick += ScrollDebounceTimer_Tick;
+
         _scrollDebounceTimer.Start();
         return Task.CompletedTask;
+    }
+
+    private void ScrollDebounceTimer_Tick(object? _, object e)
+    {
+        if (_scrollDebounceTimer == null) return;
+            _scrollDebounceTimer.Stop();
+
+        if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 5)
+        {
+            LogListView.ScrollIntoView(LogEntriesDisplay.Last());
+        }
     }
 
 
@@ -202,10 +195,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
         var currentState = button.Tag as bool? ?? false;
         var newState = !currentState;
 
-        _dispatcherQueue.TryEnqueue(() =>
-        {
-            UpdateButtonState(button, newState);
-        });
+        UpdateButtonState(button, newState);
 
         HandleLogcatOperation(newState);
     }
@@ -220,15 +210,22 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
         );
     }
 
-    private void HandleLogcatOperation(bool newState)
+    private async void HandleLogcatOperation(bool newState)
     {
-        if (newState && SelectedDevice?.SerialNumber != null)
+        try
         {
-            StartLogcat(SelectedDevice.SerialNumber);
+            if (newState && SelectedDevice?.SerialNumber != null)
+            {
+                await StartLogcat(SelectedDevice.SerialNumber);
+            }
+            else
+            {
+                StopLogcat();
+            }
         }
-        else
+        catch (Exception e)
         {
-            StopLogcat();
+            Console.WriteLine($"Error while handling logcat operation: {e.StackTrace}");
         }
     }
 
@@ -237,10 +234,10 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
         ClearLogs();
         if (_logcatService == null) return;
 
-        await Task.Run(() => { _ = _logcatService.StartLogcat(file); });
+        await _logcatService.StartLogcat(file);
     }
 
-    private async void StartLogcat(string serialNumber)
+    private async Task StartLogcat(string serialNumber)
     {
         ClearLogs();
         if (_logcatService != null) await _logcatService.StartLogcat(serialNumber);
@@ -254,8 +251,16 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
 
     private void ClearLogs()
     {
-        _dispatcherQueue.TryEnqueue(() => { LogEntriesDisplay.Clear(); });
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            LogEntriesDisplay.Clear();
+        }
+        else
+        {
+            _dispatcherQueue.TryEnqueue(() => { LogEntriesDisplay.Clear(); });
+        }
     }
+
 
     private void ShowPackages_Click(object sender, RoutedEventArgs e)
     {
@@ -264,54 +269,68 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
 
     private async void ShowPackageSelectionWindow()
     {
-
-        if (_packageDialog == null)
+        try
         {
-            var dialogContent = new PackageSelectionDialog();
-
-            _packageDialog = new ContentDialog
+            if (_packageDialog == null)
             {
-                XamlRoot = XamlRoot,
-                PrimaryButtonText = "Apply",
-                SecondaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                Content = dialogContent
-            };
+                var dialogContent = new PackageSelectionDialog();
 
-            dialogContent.PopulatePackages(_availablePackages, SelectedPackages);
-            dialogContent.Loaded += (_, _) =>
+                _packageDialog = new ContentDialog
+                {
+                    XamlRoot = XamlRoot,
+                    PrimaryButtonText = "Apply",
+                    SecondaryButtonText = "Clear",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    Content = dialogContent
+                };
+
+                dialogContent.PopulatePackages(_availablePackages, SelectedPackages);
+                dialogContent.Loaded += (_, _) =>
+                {
+                    dialogContent.SortPackagesBySearchTerm(string.Empty);
+                };
+            }
+
+            var packageDialogContent = (PackageSelectionDialog)_packageDialog.Content;
+            var result = await _packageDialog.ShowAsync();
+
+            switch (result)
             {
-                dialogContent.SortPackagesBySearchTerm(string.Empty);
-            };
+                case ContentDialogResult.Primary:
+                    ApplySelectedPackages(packageDialogContent);
+                    break;
+                case ContentDialogResult.Secondary:
+                    ClearSelectedPackaged(packageDialogContent);
+                    break;
+                case ContentDialogResult.None:
+                default:
+                    return;
+            }
         }
-
-        var packageDialogContent = (PackageSelectionDialog)_packageDialog.Content;
-        var result = await _packageDialog.ShowAsync();
-
-        switch (result)
+        catch (Exception e)
         {
-            case ContentDialogResult.Primary:
-                ApplySelectedPackages(packageDialogContent);
-                break;
-            case ContentDialogResult.Secondary:
-                ClearSelectedPackaged(packageDialogContent);
-                break;
-            case ContentDialogResult.None:
-            default:
-                return;
+            Console.WriteLine($"Error while showing packages: {e.StackTrace}");
         }
     }
 
-    private void ApplySelectedPackages(PackageSelectionDialog dialogContent)
+    private async void ApplySelectedPackages(PackageSelectionDialog dialogContent)
     {
-        SelectedPackages.Clear();
-        foreach (var package in dialogContent.SelectedPackages)
+        try
         {
-            SelectedPackages.Add(package);
+            SelectedPackages.Clear();
+            foreach (var package in dialogContent.SelectedPackages)
+            {
+                SelectedPackages.Add(package);
+            }
+            await LoadLogEntriesIncludingPackages();
         }
-        LoadLogEntriesIncludingPackages();
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error when applying selected packages: {e.StackTrace}");
+        }
     }
+
 
     private void ClearSelectedPackaged(PackageSelectionDialog dialogContent)
     {
@@ -452,7 +471,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
     }
 
 
-    private SolidColorBrush GetHighlightColor(LogEntry logEntry)
+    private static SolidColorBrush GetHighlightColor(LogEntry logEntry)
     {
         var brush = logEntry.Level switch
         {
@@ -462,7 +481,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
             "W" => ColorManager.GetBrush("HWarningColor"),
             "E" => ColorManager.GetBrush("HErrorColor"),
             "F" => ColorManager.GetBrush("HFatalColor"),
-            _ => new SolidColorBrush(Colors.Transparent),
+            _ => new SolidColorBrush(Colors.Transparent)
         };
 
         return brush;
@@ -502,13 +521,14 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
             if (listViewItem == null) continue;
 
             FindTimespanButton(listViewItem, out var timespanButton);
+            if (timespanButton == null) continue;
             timespanButton.IsChecked = false;
         }
 
         TimespanTextBlock.Text = "00:00:00.0000";
     }
 
-    private void FindTimespanButton(DependencyObject obj, out ToggleButton button)
+    private static void FindTimespanButton(DependencyObject obj, out ToggleButton? button)
     {
         button = null;
         var childrenCount = VisualTreeHelper.GetChildrenCount(obj);
@@ -549,7 +569,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
             {
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
                 SuggestedFileName = suggestedFileName,
-                DefaultFileExtension = defaultFileExtension,
+                DefaultFileExtension = defaultFileExtension
             };
 
             // Add file types to save picker
@@ -566,7 +586,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
                 if (isUnfilteredExport && _logStorageService != null)
                     await _logStorageService.ExportFile(file.Path, isJsonFormat);
                 else
-                    await ExportFile(file.Path, isJsonFormat);
+                    await ExportFile(file, isJsonFormat);
 
                 Console.WriteLine("File saved successfully.");
 
@@ -617,7 +637,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
             {
                 FileTypeFilter = { ".logcat" },
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                ViewMode = PickerViewMode.List,
+                ViewMode = PickerViewMode.List
             };
             var window = App.MainAppWindow;
 
@@ -627,7 +647,7 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
 
             var file = await openPicker.PickSingleFileAsync();
 
-            StartLogcat(file);
+            await StartLogcat(file);
         }
         catch (Exception ex)
         {
@@ -636,17 +656,13 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
     }
 
 
-    private Task ExportFile(string filePath, bool isJsonFormat)
+    private Task ExportFile(StorageFile file, bool isJsonFormat)
     {
-        if (isJsonFormat)
-            ExportToJsonFile(filePath);
-        else
-            ExportToTxtFile(filePath);
-
+        _ = isJsonFormat ? ExportToJsonFile(file) : ExportToTxtFile(file);
         return Task.CompletedTask;
     }
 
-    private Task ExportToJsonFile(string filePath)
+    private async Task ExportToJsonFile(StorageFile file)
     {
         var logEntries = LogEntriesDisplay.ToList();
         var filteredEntries = logEntries.Select(entry => new
@@ -662,29 +678,22 @@ public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
             entry.PackageName
         });
 
-        // Serialize the filtered entries to JSON
         var jsonContent = JsonConvert.SerializeObject(filteredEntries, Formatting.Indented);
 
-        // Write the JSON content to the specified file
-        File.WriteAllText(filePath, jsonContent);
-
-        return Task.CompletedTask;
+        // Use asynchronous file write
+        await FileIO.WriteTextAsync(file, jsonContent);
     }
 
-    private Task ExportToTxtFile(string filePath)
+
+    private async Task ExportToTxtFile(StorageFile file)
     {
         var logEntries = LogEntriesDisplay.ToList();
-
-        // Extract the FormattedEntry of each LogEntry
         var formattedEntries = logEntries.Select(entry => entry.FormattedEntry);
 
-        // Write all formatted entries to the file, each on a new line
-        File.WriteAllLines(filePath, formattedEntries);
-
-        return Task.CompletedTask;
+        await FileIO.WriteLinesAsync(file, formattedEntries);
     }
 
-    private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

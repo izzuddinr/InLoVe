@@ -85,7 +85,7 @@ public static class LogEntryExtensions
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error creating brush for log level {entry.Level}: {ex.Message}");
+            Console.WriteLine($"Error creating brush for log level {entry.Level}: {ex.StackTrace}");
         }
     }
 }
