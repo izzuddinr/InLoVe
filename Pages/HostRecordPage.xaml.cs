@@ -9,11 +9,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json.Linq;
-using WinRT.Interop;
 using Qatalyst.Controls;
 using Qatalyst.Objects;
 using Qatalyst.Services;
 using Qatalyst.Utils;
+using WinRT.Interop;
 
 namespace Qatalyst.Pages;
 

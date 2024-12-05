@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Microsoft.Extensions.DependencyInjection;
-using Qatalyst.Objects;
 using CliWrap;
 using CliWrap.Buffered;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Qatalyst.Objects;
 
 namespace Qatalyst.Services;
 

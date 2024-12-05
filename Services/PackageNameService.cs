@@ -10,8 +10,7 @@ namespace Qatalyst.Services;
 
 public class PackageNameService
 {
-
-    private static List<string> excludePackages =
+    private static readonly List<string> _excludePackages =
     [
         "ueventd",
         "logd",
@@ -80,117 +79,117 @@ public class PackageNameService
 
     private readonly PubSubService _pubSubService;
 
-        private  Dictionary<string, string> _packageCache = new();
+    private Dictionary<string, string> _packageCache = new();
 
-        public PackageNameService()
+    public PackageNameService()
+    {
+        _pubSubService = App.Services.GetService<PubSubService>();
+        _pubSubService.Subscribe("DeviceSelected", OnDeviceSelected);
+    }
+
+    private async void OnDeviceSelected(object eventData)
+    {
+        try
         {
-            _pubSubService = App.Services.GetService<PubSubService>();
-            _pubSubService.Subscribe("DeviceSelected", OnDeviceSelected);
+            if (eventData is not DeviceInfo selectedDevice) return;
+            Console.WriteLine($"Device selected: {selectedDevice.SerialNumber}");
+            await BuildPackageNameCacheAsync(selectedDevice);
         }
-
-        private async void OnDeviceSelected(object eventData)
+        catch (Exception ex)
         {
-            try
-            {
-                if (eventData is not DeviceInfo selectedDevice) return;
-                Console.WriteLine($"Device selected: {selectedDevice.SerialNumber}");
-                await BuildPackageNameCacheAsync(selectedDevice);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error on Device selected event: {ex.Message}");
-            }
-        }
-
-        public Task BuildPackageNameCacheFromFile(Dictionary<string, string> packageCache)
-        {
-            _packageCache = packageCache;
-            _pubSubService.Publish("PackageCacheInitialized",
-                new Tuple<List<string>, List<string>>(GetRunningPackages(), GetDefaultPackage()));
-
-            return Task.CompletedTask;
-        }
-
-        private async Task BuildPackageNameCacheAsync(DeviceInfo? deviceInfo)
-        {
-            if (deviceInfo is null) return;
-
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "adb",
-                    Arguments = $"-s {deviceInfo.SerialNumber} shell ps",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            var output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
-
-            var lines = output.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
-
-            _packageCache.Clear();
-            foreach (var line in lines)
-            {
-                var parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
-
-                if (parts.Length <= 8)
-                {
-                    continue;
-                }
-
-                var rawPackageName = parts[8];
-
-                if (excludePackages.Any(exclude => rawPackageName.Contains(exclude))) continue;
-
-                var packageName = SanitizePackageName(rawPackageName);
-
-                _packageCache[parts[1]] = packageName;
-                Console.WriteLine($"Processed packaged: {parts[1]} | {packageName}");
-            }
-
-            _pubSubService.Publish("PackageCacheInitialized",
-                new Tuple<List<string>, List<string>>(GetRunningPackages(), GetDefaultPackage()));
-        }
-
-        public List<string> GetRunningPackages()
-        {
-            return _packageCache.Values.Distinct().ToList();
-        }
-
-        private List<string> GetDefaultPackage()
-        {
-            var filteredPackages = _packageCache
-                .Where(package => package.Value.Contains(".ingenico") || package.Value.Contains(".ingp"))
-                .Select(package => package.Value)
-                .ToList();
-
-            return filteredPackages;
-        }
-
-        public string GetPackageName(string processId)
-        {
-            return _packageCache.TryGetValue(processId, out var packageName) ? packageName : string.Empty;
-        }
-
-        private static string SanitizePackageName(string packageName)
-        {
-            if (string.IsNullOrWhiteSpace(packageName))
-            {
-                return string.Empty;
-            }
-
-            packageName = packageName.Trim();
-
-            foreach (var c in packageName.Where(c => !char.IsLetterOrDigit(c) && c != '.' && c != '_'))
-            {
-                packageName = packageName.Replace(c, '_');
-            }
-
-            return packageName;
+            Console.WriteLine($"Error on Device selected event: {ex.Message}");
         }
     }
+
+    public Task BuildPackageNameCacheFromFile(Dictionary<string, string> packageCache)
+    {
+        _packageCache = packageCache;
+        _pubSubService.Publish("PackageCacheInitialized",
+            new Tuple<List<string>, List<string>>(GetRunningPackages(), GetDefaultPackage()));
+
+        return Task.CompletedTask;
+    }
+
+    private async Task BuildPackageNameCacheAsync(DeviceInfo? deviceInfo)
+    {
+        if (deviceInfo is null) return;
+
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "adb",
+                Arguments = $"-s {deviceInfo.SerialNumber} shell ps",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        var output = await process.StandardOutput.ReadToEndAsync();
+        await process.WaitForExitAsync();
+
+        var lines = output.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+
+        _packageCache.Clear();
+        foreach (var line in lines)
+        {
+            var parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length <= 8)
+            {
+                continue;
+            }
+
+            var rawPackageName = parts[8];
+
+            if (_excludePackages.Any(exclude => rawPackageName.Contains(exclude))) continue;
+
+            var packageName = SanitizePackageName(rawPackageName);
+
+            _packageCache[parts[1]] = packageName;
+            Console.WriteLine($"Processed packaged: {parts[1]} | {packageName}");
+        }
+
+        _pubSubService.Publish("PackageCacheInitialized",
+            new Tuple<List<string>, List<string>>(GetRunningPackages(), GetDefaultPackage()));
+    }
+
+    public List<string> GetRunningPackages()
+    {
+        return _packageCache.Values.Distinct().ToList();
+    }
+
+    private List<string> GetDefaultPackage()
+    {
+        var filteredPackages = _packageCache
+            .Where(package => package.Value.Contains(".ingenico") || package.Value.Contains(".ingp"))
+            .Select(package => package.Value)
+            .ToList();
+
+        return filteredPackages;
+    }
+
+    public string GetPackageName(string processId)
+    {
+        return _packageCache.TryGetValue(processId, out var packageName) ? packageName : string.Empty;
+    }
+
+    private static string SanitizePackageName(string packageName)
+    {
+        if (string.IsNullOrWhiteSpace(packageName))
+        {
+            return string.Empty;
+        }
+
+        packageName = packageName.Trim();
+
+        foreach (var c in packageName.Where(c => !char.IsLetterOrDigit(c) && c != '.' && c != '_'))
+        {
+            packageName = packageName.Replace(c, '_');
+        }
+
+        return packageName;
+    }
+}
