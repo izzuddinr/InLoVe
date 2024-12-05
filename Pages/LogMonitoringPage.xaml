@@ -126,7 +126,7 @@
                                x:Name="DisplayedEntryCount"
                                FontFamily="Consolas"
                                FontSize="13"
-                               Text="0"
+                               Text="{x:Bind DisplayedEntryCountValue, Mode=OneWay}"
                                TextWrapping="Wrap"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"
@@ -279,6 +279,7 @@
             CanDragItems="False"
             CanReorderItems="False"
             SelectionMode="Single"
+            ItemsSource="{x:Bind LogEntriesDisplay, Mode=OneWay}"
             ItemTemplate="{StaticResource LogEntryTemplate}"
             ItemContainerStyle="{StaticResource CustomListViewItemStyle}"
             Margin="0, 0, 0, 10">

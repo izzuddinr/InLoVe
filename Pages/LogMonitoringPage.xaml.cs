@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -22,8 +24,15 @@ using Qatalyst.Utils;
 using WinRT.Interop;
 namespace Qatalyst.Pages;
 
-public sealed partial class LogMonitoringPage
+public sealed partial class LogMonitoringPage : Page, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public string DisplayedEntryCountValue
+    {
+        get => LogEntriesDisplay.Count.ToString();
+    }
+
     private ObservableCollection<LogEntry> LogEntriesDisplay { get; } = [];
     private ObservableCollection<string> SelectedPackages { get; set; } = [];
 
@@ -71,26 +80,11 @@ public sealed partial class LogMonitoringPage
         _pubSubService?.Subscribe("PackageCacheInitialized", OnPackageCacheReceived);
     }
 
-    private async void LogEntriesDisplayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void LogEntriesDisplayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.NewItems == null) return;
+        OnPropertyChanged(nameof(DisplayedEntryCountValue));
 
-        foreach (var newEntry in e.NewItems.Cast<LogEntry>())
-        {
-            if (!newEntry.IsValid) continue;
-
-            if (SelectedPackages.Any() && newEntry.PackageName != null && !SelectedPackages.Contains(newEntry.PackageName))
-                continue;
-
-            _dispatcherQueue.TryEnqueue(async void () =>
-            {
-                LogListView.Items.Add(newEntry);
-                DisplayedEntryCount.Text = LogEntriesDisplay.Count.ToString();
-                await Task.Yield(); // Allow asynchronous execution if necessary
-            });
-        }
-
-        await ScrollToLatestItemAsync();
+        _ = ScrollToLatestItemAsync();
     }
 
     private void OnLogEntryReceived(object eventData)
@@ -108,7 +102,7 @@ public sealed partial class LogMonitoringPage
 
             logEntry.GetColorForLogLevel();
             LogEntriesDisplay.Add(logEntry);
-            ScrollToLatestItemAsync();
+            _ = ScrollToLatestItemAsync();
         });
     }
 
@@ -128,7 +122,7 @@ public sealed partial class LogMonitoringPage
         SelectedPackages = new ObservableCollection<string>(packageCache.Item2);
     }
 
-    private async void LoadLogEntriesIncludingPackages()
+    private async Task  LoadLogEntriesIncludingPackages()
     {
         try
         {
@@ -140,7 +134,6 @@ public sealed partial class LogMonitoringPage
 
             var logEntries = await _logStorageService.LoadLogEntriesIncludingPackagesAsync(selectedPackages);
 
-            Console.WriteLine($"Loaded {logEntries.Count} matching log entries");
             _dispatcherQueue.TryEnqueue(() =>
             {
                 ClearLogs();
@@ -180,7 +173,7 @@ public sealed partial class LogMonitoringPage
         _scrollDebounceTimer.Tick += (s, e) =>
         {
             _scrollDebounceTimer.Stop();
-            if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 0 && LogListView.Items.Count > 5)
+            if (_isAutoScrollEnabled && LogEntriesDisplay.Count > 5)
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
@@ -261,11 +254,7 @@ public sealed partial class LogMonitoringPage
 
     private void ClearLogs()
     {
-        _dispatcherQueue.TryEnqueue(() =>
-        {
-            LogListView.Items.Clear();
-            LogEntriesDisplay.Clear();
-        });
+        _dispatcherQueue.TryEnqueue(() => { LogEntriesDisplay.Clear(); });
     }
 
     private void ShowPackages_Click(object sender, RoutedEventArgs e)
@@ -693,5 +682,10 @@ public sealed partial class LogMonitoringPage
         File.WriteAllLines(filePath, formattedEntries);
 
         return Task.CompletedTask;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
