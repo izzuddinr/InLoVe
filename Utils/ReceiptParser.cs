@@ -37,6 +37,7 @@ public class ReceiptParser
             tran = inputString.Contains("MERCHANT COPY") ? tran + "M" : inputString.Contains("CUSTOMER COPY") ? tran + "C" : tran;
 
             Console.WriteLine($"TRAN: {tran}");
+            output.Name = tran;
 
             if (_receipts.Contains(tran)) return null;
 
@@ -70,7 +71,7 @@ public class ReceiptParser
         }
     }
 
-    public static Receipt ParseReceipt(string input)
+    private static Receipt ParseReceipt(string input)
     {
         // Initialize the receipt
         var receipt = new Receipt
@@ -106,7 +107,7 @@ public class ReceiptParser
         return receipt;
     }
 
-    public static List<string> SplitSections(string input)
+    private static List<string> SplitSections(string input)
     {
         var sections = new List<string>();
         var bracketLevel = 0;
@@ -115,29 +116,28 @@ public class ReceiptParser
         for (var i = 0; i < input.Length; i++)
         {
             var c = input[i];
-            if (c is '(' or '[')
+            switch (c)
             {
-                bracketLevel++;
-            }
-            else if (c is ')' or ']')
-            {
-                bracketLevel--;
-            }
-            else if (c == ',' && bracketLevel == 0)
-            {
-                // Split here
-                sections.Add(input.Substring(startIndex, i - startIndex));
-                startIndex = i + 1;
+                case '(' or '[':
+                    bracketLevel++;
+                    break;
+                case ')' or ']':
+                    bracketLevel--;
+                    break;
+                case ',' when bracketLevel == 0:
+                    // Split here
+                    sections.Add(input.Substring(startIndex, i - startIndex));
+                    startIndex = i + 1;
+                    break;
             }
         }
 
-        // Add the last section
         sections.Add(input[startIndex..]);
 
         return sections;
     }
 
-    public static ILinePrinterSection? ParseSection(string sectionStr)
+    private static ILinePrinterSection? ParseSection(string sectionStr)
     {
         return sectionStr switch
         {
@@ -148,7 +148,7 @@ public class ReceiptParser
         };
     }
 
-    public static LinePrinterImageSection ParseLinePrinterImageSection(string input)
+    private static LinePrinterImageSection ParseLinePrinterImageSection(string input)
     {
         var section = new LinePrinterImageSection();
 
@@ -173,7 +173,7 @@ public class ReceiptParser
         return section;
     }
 
-    public static LinePrinterBlankSection ParseLinePrinterBlankSection(string input)
+    private static LinePrinterBlankSection ParseLinePrinterBlankSection(string input)
     {
         var section = new LinePrinterBlankSection();
 
@@ -186,7 +186,7 @@ public class ReceiptParser
         return section;
     }
 
-    public static LinePrinterTextSection ParseLinePrinterTextSection(string input)
+    private static LinePrinterTextSection ParseLinePrinterTextSection(string input)
     {
         var section = new LinePrinterTextSection();
 
@@ -212,7 +212,7 @@ public class ReceiptParser
         return section;
     }
 
-    public static List<LinePrinterColumnStyle> ParseColumns(string input)
+    private static List<LinePrinterColumnStyle> ParseColumns(string input)
     {
         var columns = new List<LinePrinterColumnStyle>();
 
@@ -265,7 +265,7 @@ public class ReceiptParser
         return columns;
     }
 
-    public static List<string> SplitColumns(string input)
+    private static List<string> SplitColumns(string input)
     {
         var columns = new List<string>();
         var bracketLevel = 0;
@@ -296,7 +296,7 @@ public class ReceiptParser
         return columns;
     }
 
-    public static List<string> ParseContents(string input)
+    private static List<string> ParseContents(string input)
     {
         var contents = new List<string>();
 

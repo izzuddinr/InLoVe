@@ -4,6 +4,7 @@ namespace Qatalyst.Objects;
 
 public class Receipt
 {
+    public string Name { get; set; } = string.Empty;
     public LinePrintData LinePrintData { get; set; }
 }
 

@@ -259,7 +259,7 @@
                 </AppBarButton>
                 <AppBarSeparator/>
                 <AppBarButton x:Name="ImportJsonButton"
-                              Icon="Save"
+                              Icon="OpenFile"
                               Label="Import Logcat (JSON)"
                               Tag="FILTERED_EXPORT"
                               Click="ImportButton_OnClick">

@@ -47,15 +47,20 @@ public sealed partial class MainWindow : Window
         SelectedDeviceText.Text = $"{deviceInfo.SerialNumber} ({deviceInfo.Manufacturer} - {deviceInfo.Model})" ?? "-";
     }
 
-    private void InitializeDirectories()
+    private static void EnsureDirectoryExists(string directoryPath, string directoryType)
     {
-        var screenshotsDirectory = $@"{Environment.CurrentDirectory}\Screenshots";
+        if (Directory.Exists(directoryPath)) return;
+        Console.WriteLine($"Creating {directoryType} directory: {directoryPath}");
+        Directory.CreateDirectory(directoryPath);
+    }
 
-        if (!Directory.Exists(screenshotsDirectory))
-        {
-            Console.WriteLine($"Creating screenshots directory: {screenshotsDirectory}");
-            Directory.CreateDirectory(screenshotsDirectory);
-        }
+    private static void InitializeDirectories()
+    {
+        var screenshotsDirectory = Path.Combine(Environment.CurrentDirectory, "Screenshots");
+        var receiptsDirectory = Path.Combine(Environment.CurrentDirectory, "Receipts");
+
+        EnsureDirectoryExists(screenshotsDirectory, "screenshots");
+        EnsureDirectoryExists(receiptsDirectory, "receipts");
     }
 
 

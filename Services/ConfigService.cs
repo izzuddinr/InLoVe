@@ -20,7 +20,7 @@ namespace Qatalyst.Services
         {
             CapkLabels = LoadCapkDictionary("capk.json");
             Iso8583Filter = LoadIso8583Filter("iso8583filter.json");
-            RandomQs = LoadQDictionary("RANDOMQ.json");
+            RandomQs = LoadQDictionary("RANDOMQ.json").Where(q => q.Text.Length <= 250).ToList();
             HostRecordTags = LoadHostRecordTags("tags.json");
         }
 

@@ -4,7 +4,9 @@ using Microsoft.UI.Xaml;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Windows.UI;
 using Microsoft.UI;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Qatalyst.Objects;
@@ -47,9 +49,26 @@ namespace Qatalyst.Utils
             CreateBlankLines(3, stackPanel);
         }
 
-        public static void PopulateReceiptStackPanel(Receipt receipt, StackPanel stackPanel)
+        public static void PopulateReceiptStackPanel(
+            Receipt receipt,
+            StackPanel rootPanel,
+            RightTappedEventHandler rightTappedHandler
+        )
         {
             if (receipt?.LinePrintData?.Sections == null) return;
+
+            var stackPanel = new StackPanel()
+            {
+                Name = receipt.Name,
+                Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xFC, 0xFC, 0xFC)),
+                Orientation = Orientation.Vertical,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Padding = new Thickness(10),
+            };
+            stackPanel.RightTapped += rightTappedHandler;
+
+            CreateBlankLines(1, stackPanel);
 
             foreach (var sectionLine in receipt.LinePrintData.Sections.SelectMany(section => section.Sections))
             {
@@ -94,7 +113,9 @@ namespace Qatalyst.Utils
                 }
             }
 
-            CreateBlankLines(5, stackPanel);
+            CreateBlankLines(1, stackPanel);
+
+            rootPanel.Children.Add(stackPanel);
         }
 
         /// <summary>

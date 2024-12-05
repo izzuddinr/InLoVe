@@ -31,12 +31,11 @@ public sealed partial class LogMonitoringPage
     private bool _isAutoScrollEnabled;
 
     private List<string> _availablePackages = [];
-    private List<int> _searchResults = [];
+    private readonly List<int> _searchResults = [];
     private int _currentResultIndex = -1;
     private string _previousQuery = string.Empty;
 
-    private List<int> _timespanIndices = [];
-    private List<DateTime> _timespanData = [];
+    private readonly List<DateTime> _timespanData = [];
 
     private ContentDialog? _packageDialog;
     private DispatcherTimer? _scrollDebounceTimer;
@@ -204,27 +203,40 @@ public sealed partial class LogMonitoringPage
 
     private void StartStopToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not AppBarButton button) return;
+        if (sender is not AppBarButton button)
+            return;
 
-        var currentState = button.Tag is bool tagValue && tagValue;
+        var currentState = button.Tag as bool? ?? false;
         var newState = !currentState;
-
-        Console.WriteLine($"Current state is {currentState}, newState is {newState}");
 
         _dispatcherQueue.TryEnqueue(() =>
         {
-            button.Tag = newState;
-            button.Label = newState ? "Stop" : "Start";
-            StartStopIcon.Glyph = newState ? "\uE71A" : "\uE768";
-            StartStopToggleButton.Foreground = newState
-                ? ColorManager.GetBrush("StopColor")
-                : ColorManager.GetBrush("StartColor");
+            UpdateButtonState(button, newState);
         });
 
-        if (newState)
+        HandleLogcatOperation(newState);
+    }
+
+    private void UpdateButtonState(AppBarButton button, bool newState)
+    {
+        button.Tag = newState;
+        button.Label = newState ? "Stop" : "Start";
+        StartStopIcon.Glyph = newState ? "\uE71A" : "\uE768";
+        StartStopToggleButton.Foreground = ColorManager.GetBrush(
+            newState ? "StopColor" : "StartColor"
+        );
+    }
+
+    private void HandleLogcatOperation(bool newState)
+    {
+        if (newState && SelectedDevice?.SerialNumber != null)
+        {
             StartLogcat(SelectedDevice.SerialNumber);
+        }
         else
+        {
             StopLogcat();
+        }
     }
 
     private async Task StartLogcat(StorageFile file)
@@ -402,7 +414,7 @@ public sealed partial class LogMonitoringPage
         {
             if (LogListView.Items[index] is not LogEntry logEntry) continue;
 
-            var matches = false;
+            bool matches;
 
             if (isAndSearch)
             {
@@ -469,27 +481,13 @@ public sealed partial class LogMonitoringPage
 
     private void TimespanButton_OnClick(object sender, RoutedEventArgs e)
     {
-        // Get the ToggleButton that was clicked
-        var toggleButton = sender as ToggleButton;
+        if (sender is not ToggleButton { Parent: Grid { DataContext: LogEntry entry } } ) return;
 
-        // Get the parent Grid that contains the DataContext
-        var grid = toggleButton.Parent as Grid;
-
-        // Get the LogEntry from the DataContext
-        var logEntry = grid.DataContext as LogEntry;
-
-        // Get the index of the LogEntry in the ListView
-        var index = LogListView.Items.IndexOf(logEntry);
-
-        // Parse the date and time string to a DateTime object
-        var dateTimeString = $"{logEntry.Date} {logEntry.Time}";
+        var dateTimeString = $"{entry.Date} {entry.Time}";
         var logEntryDateTime = DateTime.ParseExact(dateTimeString, "MM-dd HH:mm:ss.fff", null);
 
-        // Add the DateTime to the list
         _timespanData.Add(logEntryDateTime);
-        _timespanIndices.Add(index);
 
-        // Print the timespans
         PrintTimespans();
     }
 
@@ -501,16 +499,14 @@ public sealed partial class LogMonitoringPage
         var prevDateTime = _timespanData[0];
         var currDateTime = _timespanData[^1];
 
-        TimeSpan timespan = currDateTime.Subtract(prevDateTime);
-        TimespanTextBlock.Text = $"{timespan:hh\\:mm\\:ss\\.ffff}";
+        var timespan = currDateTime.Subtract(prevDateTime);
+        TimespanTextBlock.Text = $@"{timespan:hh\:mm\:ss\.ffff}";
     }
 
     private void ClearTimespanButton_OnClick(object sender, RoutedEventArgs e)
     {
         _timespanData.Clear();
-        _timespanIndices.Clear();
 
-        // Loop through all the ListViewItems and set the TimespanButton IsChecked to false
         for (var i = 0; i < LogListView.Items.Count; i++)
         {
             var listViewItem = LogListView.ContainerFromIndex(i) as ListViewItem;
@@ -520,7 +516,6 @@ public sealed partial class LogMonitoringPage
             timespanButton.IsChecked = false;
         }
 
-        // Reset the Timespan TextBlock
         TimespanTextBlock.Text = "00:00:00.0000";
     }
 
@@ -556,7 +551,7 @@ public sealed partial class LogMonitoringPage
             };
 
             var defaultFileExtension = isJsonFormat ? ".logcat" : ".txt";
-            var suggestedFileName = (isUnfilteredExport ? "LOGCAT_UNFILTERED" : "LOGCAT_")
+            var suggestedFileName = (isUnfilteredExport ? "LOGCAT_UNFILTERED_" : "LOGCAT_")
                                     + DateTime.Now.ToString("yyyyMMddHHmmss")
                                     + defaultFileExtension;
 
@@ -626,7 +621,8 @@ public sealed partial class LogMonitoringPage
     }
 
     private async void ImportButton_OnClick(object sender, RoutedEventArgs e)
-    {try
+    {
+        try
         {
             var openPicker = new FileOpenPicker
             {
@@ -648,10 +644,6 @@ public sealed partial class LogMonitoringPage
         {
             Console.WriteLine("Error reading file: " + ex.Message);
         }
-        await Task.Run(() =>
-        {
-
-        });
     }
 
 

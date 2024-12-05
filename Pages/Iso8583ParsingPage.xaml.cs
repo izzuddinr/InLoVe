@@ -1,19 +1,26 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
 using Windows.Storage.Pickers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Newtonsoft.Json;
 using Qatalyst.Controls;
 using Qatalyst.Objects;
@@ -40,6 +47,9 @@ public partial class Iso8583ParsingPage
     private Receipt? _currentReceipt = null;
     private static string receiptPattern = """CommandProxy:dispatch:\d+ transactionResult = \{"linePrintData".*""";
     private CancellationTokenSource? _processingCancellationTokenSource;
+
+
+    private const string defaultFileExtension = ".png";
 
     public Iso8583ParsingPage()
     {
@@ -219,7 +229,8 @@ public partial class Iso8583ParsingPage
                         {
                             ReceiptUIHelper.PopulateReceiptStackPanel(
                                 receipt,
-                                ReceiptStackPanel
+                                ReceiptStackPanel,
+                                ReceiptStackPanel_OnRightTapped
                             );
                         }
                     }
@@ -498,32 +509,235 @@ public partial class Iso8583ParsingPage
 
     private async void ImportReceiptButton_OnClick(object sender, RoutedEventArgs e)
     {
+        // try
+        // {
+        //     var openPicker = new FileOpenPicker
+        //     {
+        //         FileTypeFilter = { ".txt" },
+        //         SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        //         ViewMode = PickerViewMode.List,
+        //     };
+        //     var window = App.MainAppWindow;
+        //
+        //     var hWnd = WindowNative.GetWindowHandle(window);
+        //
+        //     InitializeWithWindow.Initialize(openPicker, hWnd);
+        //
+        //     var file = await openPicker.PickSingleFileAsync();
+        //     var fileContents = File.ReadAllLines(file.Path);
+        //
+        //     var receipt = ReceiptParser.ParseFromJson(fileContents.ToList());
+        //     ReceiptUIHelper.PopulateReceiptStackPanel(receipt, ReceiptStackPanel);
+        // }
+        // catch (Exception ex)
+        // {
+        //     Console.WriteLine("Error reading file: " + ex.Message);
+        // }
+
+        await SaveReceiptScrollViewerAsPictureAsync();
+    }
+
+    private async void ReceiptStackPanel_OnRightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
         try
         {
-            var openPicker = new FileOpenPicker
+            if (sender is not StackPanel stackPanel) return;
+
+            var menuFlyoutItem = new MenuFlyoutItem
             {
-                FileTypeFilter = { ".txt" },
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                ViewMode = PickerViewMode.List,
+                Text = "Save Receipt",
+                Icon = new SymbolIcon(Symbol.Save),
+                Tag = stackPanel
             };
-            var window = App.MainAppWindow;
 
-            var hWnd = WindowNative.GetWindowHandle(window);
+            menuFlyoutItem.Click += ReceiptFlyOutButton_OnClick;
 
-            InitializeWithWindow.Initialize(openPicker, hWnd);
+            var flyout = new MenuFlyout
+            {
+                Items =
+                {
+                    menuFlyoutItem
+                }
+            };
 
-            var file = await openPicker.PickSingleFileAsync();
-            var fileContents = File.ReadAllLines(file.Path);
-
-            var receipt = ReceiptParser.ParseFromJson(fileContents.ToList());
-            ReceiptUIHelper.PopulateReceiptStackPanel(receipt, ReceiptStackPanel);
+            var clickPosition = e.GetPosition(stackPanel);
+            flyout.ShowAt(stackPanel, new FlyoutShowOptions
+            {
+                Position = clickPosition
+            });
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error reading file: " + ex.Message);
+            Console.WriteLine($"Error ReceiptStackPanel_OnRightTapped: {ex.StackTrace}");
         }
     }
 
-    [GeneratedRegex(@"(?=.*APP_PRINT)(?=.*\]\)\]\))")]
-    private static partial Regex LinePrintingEndRegex();
+    private async void ReceiptFlyOutButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is not MenuFlyoutItem { Tag: StackPanel stackPanel } ||
+                await CreateOutputFolder() is not { } selectedFolder)
+                return;
+
+            await ExportReceipt(stackPanel, selectedFolder, defaultFileExtension);
+
+            var dialog = CreateConfirmationDialog();
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                HandleOpenDirectory(selectedFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error ReceiptFlyOutButton_OnClick: {ex.StackTrace}");
+        }
+    }
+
+    private async Task SaveReceiptScrollViewerAsPictureAsync()
+    {
+        try
+        {
+
+            var selectedFolder = await CreateOutputFolder();
+            var loadingDialog = CreateLoadingDialog();
+
+            _ = loadingDialog.ShowAsync();
+
+            foreach (var panel in ReceiptStackPanel.Children.OfType<StackPanel>())
+            {
+                await ExportReceipt(panel, selectedFolder, defaultFileExtension);
+            }
+
+            loadingDialog.Hide();
+            loadingDialog = null;
+
+            var dialog = CreateConfirmationDialog();
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                HandleOpenDirectory(selectedFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving ScrollViewer as picture: {ex.Message}");
+        }
+    }
+
+    private static async Task ExportReceipt(StackPanel? panel, StorageFolder selectedFolder, string defaultFileExtension)
+    {
+        var suggestedFileName = $"RECEIPT_{panel.Name}{defaultFileExtension}";
+        var file = await selectedFolder.CreateFileAsync(
+            suggestedFileName,
+            CreationCollisionOption.ReplaceExisting
+        );
+
+        if (file == null)
+            return;
+
+        await Task.Delay(100);
+
+        // Rendering start
+        var renderBitmap = new RenderTargetBitmap();
+        await renderBitmap.RenderAsync(panel);
+
+        var pixelBuffer = await renderBitmap.GetPixelsAsync();
+
+        using var fileStream = await file.OpenAsync(FileAccessMode.ReadWrite);
+        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, fileStream);
+        encoder.SetPixelData(
+            BitmapPixelFormat.Bgra8,
+            BitmapAlphaMode.Premultiplied,
+            (uint)renderBitmap.PixelWidth,
+            (uint)renderBitmap.PixelHeight,
+            96,
+            96,
+            pixelBuffer.ToArray());
+
+        await encoder.FlushAsync();
+    }
+
+    private async Task<StorageFolder?> CreateOutputFolder()
+    {
+        try
+        {
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var folderPath = Path.Combine(Environment.CurrentDirectory, "Receipts", timestamp);
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+                Debug.WriteLine($"Folder created: {folderPath}");
+            }
+            else
+            {
+                Debug.WriteLine($"Folder already exists: {folderPath}");
+            }
+
+            return await StorageFolder.GetFolderFromPathAsync(folderPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling directory: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void HandleOpenDirectory(StorageFolder folder)
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = folder.Path,
+            UseShellExecute = true
+        });
+    }
+
+    private ContentDialog CreateConfirmationDialog() => new()
+    {
+        Title = "Export Successful",
+        Content =
+            $"The file has been saved successfully." +
+            $"{Environment.NewLine}" +
+            $"Do you want to open the directory where the file was exported?",
+        PrimaryButtonText = "Yes",
+        CloseButtonText = "No",
+        DefaultButton = ContentDialogButton.Primary,
+        HorizontalContentAlignment = HorizontalAlignment.Center,
+        XamlRoot = App.MainAppWindow.Content.XamlRoot
+    };
+
+    private ContentDialog CreateLoadingDialog() => new()
+    {
+        Content = new StackPanel()
+        {
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0),
+            Padding = new Thickness(20),
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Please wait while we export the receipts...",
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 10, 0, 5)
+                },
+                new ProgressBar
+                {
+                    Height = 20l,
+                    IsIndeterminate = true,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Margin = new Thickness(20, 5, 20, 10)
+                }
+            }
+        },
+        XamlRoot = App.MainAppWindow.Content.XamlRoot,
+        HorizontalContentAlignment = HorizontalAlignment.Center,
+        VerticalContentAlignment = VerticalAlignment.Center,
+        IsPrimaryButtonEnabled = false,
+        IsSecondaryButtonEnabled = false
+    };
 }
